@@ -8,14 +8,11 @@
 
 (define-syntax big-bang 
   (syntax-rules () 
-		((test a-world body ...)
-		 (begin (define world a-world) (sub-bang body ...)))))
+		((_ (
+		((_ a-world body ...)
+		 (let* ([run (lambda (world)
+			       (run (big-bang body ...)))
 
-(define-syntax sub-bang
-  (syntax-rules ()
-		((_ (name other ...) ...)
-		 (begin (cond [(memq (quote name) '(on-draw stop-when on-key)) 
-				     (define name (list other ... ))]) ... (start)))))
 
 (define start (lambda ()
 		(sdl2:set-main-ready!)
