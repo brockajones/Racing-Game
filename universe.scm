@@ -1,6 +1,8 @@
 (use (prefix sdl2 sdl2:)
      (prefix sdl2-ttf ttf:))
 
+(use srfi-9)
+
 (define get-events-proc (lambda (event?)
 			  (letrec ([get (lambda (match other)
 					  (let ([current (sdl2:poll-event!)])
@@ -40,9 +42,9 @@
 		     (sdl2:render-present! (cdr sdl)) result)))
 		((_ world sdl return (stop-when proc) body ...)
 		 (begin (cond [(proc (big-bang world sdl return body ...)) (return world)]) world))
-		((_ world sdl return (on-key proc) body ...)
+		((_ world sdl return events (on-key proc) body ...)
 		    (proc  (big-bang world sdl return body ...) (get-key-events!)))
-		((_ world sdl return)
+		((_ world sdl return events)
 		 world)))
 
 (big-bang (init-world 1)
@@ -51,4 +53,6 @@
 		     (sdl2:render-draw-color-set! (cdr y) (sdl2:make-color 0 0 0))
 		     (+ 0.1 x) ))
 	  (stop-when (lambda (x) (> x 1000)))
-	  (on-key (lambda (world events) (cond [(not (null? events)) (display events)]) world)))
+	  (on-key (lambda (world events) (cond [(not (null? events))
+						(map (lambda (x)(display (sdl2:keyboard-event-scancode x))) events)])
+						world)))
