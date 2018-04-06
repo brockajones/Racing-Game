@@ -22,6 +22,10 @@
 			       (get-events events)]
 			     [else events]))))
 
+(define do-key-events (lambda (world events proc)
+			(cond [(null? events) world]
+			      [else (proc (do-key-events world (cdr events) proc) (car events))])))
+
 (define-syntax big-bang 
   (syntax-rules (init-world on-draw stop-when on-key)
 		((_ (init-world val) body body* ...)
@@ -53,9 +57,10 @@
 		     (sdl2:render-present! (cdr (state-sdl state))) result)))
 		((_ state (stop-when proc) body ...)
 		 (let ([return (state-return state)]) (cond [(proc (big-bang state body ...)) 
-							     (return (state-world state))]) (state-world state)))
+							     (return (state-world state))]) 
+		   (big-bang state body ...)))
 		((_ state (on-key proc) body ...)
-		 (proc (state-world state) (events-keyboard (state-events state))))
+		 (do-key-events (big-bang state body ...) (set->list (events-keyboard (state-events state))) proc))
 		((_ state)
 		 (state-world state))))
 
@@ -63,6 +68,6 @@
 	  (on-draw (lambda (x y) (sdl2:render-draw-color-set! (cdr y) (sdl2:make-color 200 255 255))
 		     (sdl2:render-fill-rect! (cdr y) (sdl2:make-rect (floor x) (floor x) 600 400))
 		     (sdl2:render-draw-color-set! (cdr y) (sdl2:make-color 0 0 0))
-		     (+ 0.1 x) ))
+		     x))
 	  (stop-when (lambda (x) (> x 500)))
-	  (on-key (lambda (world events) (if (not (= 0 (set-size events))) (display events)) world)))
+	  (on-key (lambda (world event) (+ 1 world))))
