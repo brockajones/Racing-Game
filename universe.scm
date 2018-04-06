@@ -13,8 +13,12 @@
 		       (cond [event 
 			       (cond [(sdl2:keyboard-event? event)
 				      (events-keyboard-set! events 
-							    (set-adjoin (events-keyboard events) 
-									(sdl2:keyboard-event-scancode event)))])
+							    (if (sdl2:keyboard-event-state event)
+							      (set-adjoin (events-keyboard events) 
+									  (sdl2:keyboard-event-scancode event))
+							      (set-delete (events-keyboard events)
+									  (sdl2:keyboard-event-scancode event)
+									  )))])
 			       (get-events events)]
 			     [else events]))))
 
