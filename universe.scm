@@ -1,26 +1,36 @@
 (use (prefix sdl2 sdl2:)
      (prefix sdl2-ttf ttf:))
-(use srfi-9)
 (use srfi-113)
 (use srfi-128)
 
 (define-record state world sdl return events)
-(define-record events keyboard)
-(define make-set (lambda () (set (make-equal-comparator))))
+;(define (make-state world sdl return events) 
+;  (alist->hash-table `((world . ,world) 
+;		       (sdl . ,sdl)
+;		       (return . ,return)
+;		       (events . ,events))))
+(define-syntax make-hash 
+     (syntax-rules ()
+            ((_ (key val) ... ) 
+	     (alist->hash-table (list (cons (quote key) val) ...)))))
 
-(define get-events (lambda (events)
-		     (let ((event (sdl2:poll-event!)))
-		       (cond [event 
-			       (cond [(sdl2:keyboard-event? event)
-				      (events-keyboard-set! events 
-							    (if (sdl2:keyboard-event-state event)
-							      (set-adjoin (events-keyboard events) 
-									  (sdl2:keyboard-event-scancode event))
-							      (set-delete (events-keyboard events)
-									  (sdl2:keyboard-event-scancode event)
-									  )))])
-			       (get-events events)]
-			     [else events]))))
+
+(define-record events keyboard)
+(define (make-set) (set (make-equal-comparator)))
+
+(define (get-events events)
+  (let ((event (sdl2:poll-event!)))
+    (cond [event 
+	    (cond [(sdl2:keyboard-event? event)
+		   (events-keyboard-set! events 
+					 (if (sdl2:keyboard-event-state event)
+					   (set-adjoin (events-keyboard events) 
+						       (sdl2:keyboard-event-scancode event))
+					   (set-delete (events-keyboard events)
+						       (sdl2:keyboard-event-scancode event)
+						       )))])
+	    (get-events events)]
+	  [else events])))
 
 (define do-key-events (lambda (world events proc)
 			(cond [(null? events) world]
@@ -63,11 +73,3 @@
 		 (do-key-events (big-bang state body ...) (set->list (events-keyboard (state-events state))) proc))
 		((_ state)
 		 (state-world state))))
-
-(big-bang (init-world 1)
-	  (on-draw (lambda (x y) (sdl2:render-draw-color-set! (cdr y) (sdl2:make-color 200 255 255))
-		     (sdl2:render-fill-rect! (cdr y) (sdl2:make-rect (floor x) (floor x) 600 400))
-		     (sdl2:render-draw-color-set! (cdr y) (sdl2:make-color 0 0 0))
-		     x))
-	  (stop-when (lambda (x) (> x 500)))
-	  (on-key (lambda (world event) (+ 1 world))))
