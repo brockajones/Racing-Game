@@ -1,23 +1,57 @@
-(module universe (big-bang draw-fill-rect)
+(module universe (big-bang draw-fill-rect set-color draw-line make-circle make-hash hash-ref render-texture)
 	(import scheme chicken)
 	(use srfi-69)
 	(use srfi-113)
 	(use srfi-128)
 	(use (prefix sdl2 sdl2:)
 	     (prefix sdl2-ttf ttf:))
+
+
+	(define hash-ref hash-table-ref)
+
 	(define-syntax make-hash 
 	  (syntax-rules ()
 			((_ (key val) ... ) 
 			 (alist->hash-table (list (cons (quote key) val) ...)))))
 
 	(define draw-fill-rect (lambda (sdl x y w h)
-				 (sdl2:render-draw-color-set! (cdr sdl) (sdl2:make-color 200 255 255))
-				 (sdl2:render-fill-rect! (cdr sdl) (sdl2:make-rect (floor x) (floor x) 600 400))
-				 (sdl2:render-draw-color-set! (cdr sdl) (sdl2:make-color 0 0 0))))
+				 (sdl2:render-fill-rect! (cdr sdl) (sdl2:make-rect x y w h))))
+
+	(define set-color (lambda (sdl r g b)
+			    (sdl2:render-draw-color-set! (cdr sdl) (sdl2:make-color r g b))))
+
+	(define draw-line (lambda (sdl x1 y1 x2 y2)
+			    (sdl2:render-draw-line! (cdr sdl) x1 y1 x2 y2)))
+
+	(define distance2 (lambda (x1 y1 x2 y2)
+			    (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2))))
+
+	(define render-texture (lambda (sdl texture x y)
+				 (sdl2:render-copy! (cdr sdl) texture #f 
+						    (sdl2:make-rect x y 
+								    (sdl2:texture-w texture) 
+								    (sdl2:texture-h texture))))) 
+
+
+	(define make-circle (lambda (radius sdl #!optional color surface comparator)
+			      (let ([surf (if surface 
+					    surface 
+					    (sdl2:make-surface (* 2 radius) (+ (* 2 radius) 1) 32))]
+				    [color (if color color (sdl2:make-color 255 255 255))]
+				    [comparator (if comparator comparator >)])
+				(sdl2:lock-surface! surf)
+				(do ((i 0 (+ 1 i)))
+				  ((> i (* 4 radius radius)))
+				  (let ([x (modulo i (* 2 radius))]
+					[y (quotient i (* 2 radius))])
+				    (cond [(comparator (* radius radius) (distance2 radius radius x y))
+					   (sdl2:surface-set! surf x y color)])))
+				(sdl2:unlock-surface! surf)
+				(sdl2:create-texture-from-surface (cdr sdl) surf))))
 
 	(define-syntax big-bang 
 	  (syntax-rules (init-world on-draw stop-when on-key)
-			((_ (init-world val) body body* ...)
+			((_ (init-world init-proc) body body* ...)
 			 (begin 
 			   (define (make-events keyboard)
 			     (make-hash (keyboard keyboard)))
@@ -46,8 +80,6 @@
 
 
 
-			   (define hash-ref hash-table-ref)
-
 			   (define do-key-events (lambda (world events proc)
 						   (cond [(null? events) world]
 							 [else (proc (do-key-events 
@@ -70,7 +102,7 @@
 							(set! events (get-events events))
 							(let* ([state (make-state world sdl return events)])
 							  (run (big-bang state body body* ...) )))))]) 
-			       (run val))
+			       (run (init-proc sdl)))
 			     (sdl2:destroy-window! (car sdl)))))
 			((_ state (on-draw proc) body ...)
 			 (begin 
