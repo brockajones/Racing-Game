@@ -1,5 +1,3 @@
-(declare (unit color))
-
 (define hue->rgb (lambda (h)
 		   (let* ([h (modulo h 360)]
 			  [up-hill (floor (* (/ (modulo h 60) 60) 255))]

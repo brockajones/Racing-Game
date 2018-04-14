@@ -56,10 +56,12 @@
 
 		   (define (make-set) (set (make-equal-comparator)))
 
-		   (define (get-events events)
+		   (define (get-events events quit)
 		     (let ((event (sdl2:poll-event!)))
 		       (cond [event 
-			       (cond [(sdl2:keyboard-event? event)
+			       (cond 
+				 [(sdl2:quit-event? event) (quit)]
+				 [(sdl2:keyboard-event? event)
 				      (hash-table-set! events 'keyboard
 						       (if (sdl2:keyboard-event-state event)
 							 (set-adjoin (hash-ref events 'keyboard) 
@@ -67,7 +69,7 @@
 							 (set-delete (hash-ref events 'keyboard)
 								     (sdl2:keyboard-event-scancode 
 								       event))))])
-			       (get-events events)]
+			       (get-events events quit)]
 			     [else events])))
 
 		   (define (make-state world sdl return events) 
@@ -97,7 +99,7 @@
 			  [events (make-events (make-set))])
 		     (letrec ([run (lambda (world)
 				     (call/cc (lambda (return)
-						(set! events (get-events events))
+						(set! events (get-events events (lambda () (return world))))
 						(let* ([state (make-state world sdl return events)])
 						  (run (big-bang state body body* ...) )))))]) 
 		       (run (init-proc sdl)))
