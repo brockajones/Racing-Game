@@ -31,7 +31,6 @@
 							    (sdl2:texture-w texture) 
 							    (sdl2:texture-h texture)))))
 
-
 (define make-circle (lambda (radius sdl #!optional color surface comparator)
 		      (let ([surf (if surface 
 				    surface 
@@ -88,6 +87,8 @@
 		   (sdl2:set-main-ready!)
 		   (sdl2:init!)
 		   (ttf:init!)
+		   ;Sets vsync
+		   (sdl2:set-hint! 'render-vsync "1")
 		   (current-exception-handler
 		     (let ((original-handler (current-exception-handler)))
 		       (lambda (exception)
@@ -100,12 +101,16 @@
 					      (first window-size) (second window-size)  '()))
 				 cons)]
 			  [events (make-events (make-set))])
-		     (letrec ([run (lambda (world)
+		     (letrec ([run (lambda (world time)
+				     ;Locks framerate at 60
+				     (let ([offset (- (quotient 1000 60) (- (sdl2:get-ticks) time))])
+				       (sdl2:delay! (if (> offset 0) offset 0)))
+				     (let ([last-time (sdl2:get-ticks)])
 				     (call/cc (lambda (return)
 						(set! events (get-events events (lambda () (return world))))
 						(let* ([state (make-state world sdl return events)])
-						  (run (big-bang state body body* ...) )))))]) 
-		       (run (init-proc sdl)))
+						  (run (big-bang state body body* ...) last-time ))))))]) 
+		       (run (init-proc sdl) 0 ))
 		     (sdl2:destroy-window! (car sdl)))))
 		((_ state (on-draw proc) body ...)
 		 (begin 
