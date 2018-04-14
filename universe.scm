@@ -25,10 +25,11 @@
 		    (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2))))
 
 (define render-texture (lambda (sdl texture x y #!optional color)
+			 (if color (set! (sdl2:texture-color-mod texture) color))
 			 (sdl2:render-copy! (cdr sdl) texture #f 
 					    (sdl2:make-rect x y 
 							    (sdl2:texture-w texture) 
-							    (sdl2:texture-h texture))))) 
+							    (sdl2:texture-h texture)))))
 
 
 (define make-circle (lambda (radius sdl #!optional color surface comparator)
@@ -49,7 +50,7 @@
 
 (define-syntax big-bang 
   (syntax-rules (init-world on-draw stop-when on-key)
-		((_ (init-world init-proc) body body* ...)
+		((_ (init-world init-proc sizes ...) body body* ...)
 		 (begin 
 		   (define (make-events keyboard)
 		     (make-hash (keyboard keyboard)))
@@ -92,9 +93,11 @@
 		       (lambda (exception)
 			 (sdl2:quit!)
 			 (original-handler exception))))
-		   (let* ([window-size '(1280 720)]
+		   (let* ([options (list sizes ...)]
+			  [window-size (if (not (null? options)) options '(1280 720))]
 			  [sdl (call-with-values 
-				 (lambda () (sdl2:create-window-and-renderer!  1280 720 '()))
+				 (lambda () (sdl2:create-window-and-renderer! 
+					      (first window-size) (second window-size)  '()))
 				 cons)]
 			  [events (make-events (make-set))])
 		     (letrec ([run (lambda (world)

@@ -9,7 +9,7 @@
 									(or 
 									  (and (> a b) (< (/ a 2) b) ) 
 									  (> (/ a 10) b) ))))
-					       (col 0))))
+					       (col 0))) 1920 1080)
 	  (on-draw (lambda (w sdl) 
 		     (let* ([x (hash-ref w 'pos)]
 			    [c (hue->rgb (floor (hash-ref w 'col)))])
@@ -19,7 +19,7 @@
 		       (draw-line sdl 0 0 (+ x 500) x)
 		       (draw-line sdl 0 0 x (+ x 500))
 		       (draw-fill-rect sdl x x 500 500)
-		       (render-texture sdl (hash-ref w 'circle-a) 50 50)
+		       (render-texture sdl (hash-ref w 'circle-a) 50 50 (invert c))
 		       (apply set-color (cons sdl c))
 		       w)))
 	  (stop-when (lambda (w) (> (hash-ref w 'pos) 500)))
