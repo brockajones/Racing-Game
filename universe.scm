@@ -10,10 +10,15 @@
 			 [else (hash-table-ref table (car keys))])))
 
 (define hash-update (lambda (table . rest)
+		      (let ([table (hash-table-copy table)])
+		      (cond [(> 2 (length rest)) (raise "Not enough arguments")]
+			    [(>= 2 (length rest)) 
+			     (hash-table-update! table (car rest) (cadr rest))]
+			    [else 
 		      (hash-table-update!
-		      (apply hash-ref (cons (hash-table-copy table) (reverse (cddr (reverse rest)))))
+		      (apply hash-ref (cons table (reverse (cddr (reverse rest)))))
 		      (cadr (reverse rest))
-		      (car (reverse rest)))))
+		      (car (reverse rest)))]) table )))
 
 (define-syntax make-hash 
   (syntax-rules ()
