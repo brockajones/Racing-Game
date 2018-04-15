@@ -5,7 +5,15 @@
      (prefix sdl2-ttf ttf:))
 
 
-(define hash-ref hash-table-ref)
+(define hash-ref (lambda (table . keys)
+		   (cond [(> (length keys) 1) (apply hash-ref (cons (hash-table-ref table (car keys)) (cdr keys))) ]
+			 [else (hash-table-ref table (car keys))])))
+
+(define hash-update (lambda (table . rest)
+		      (hash-table-update!
+		      (apply hash-ref (cons (hash-table-copy table) (reverse (cddr (reverse rest)))))
+		      (cadr (reverse rest))
+		      (car (reverse rest)))))
 
 (define-syntax make-hash 
   (syntax-rules ()
@@ -15,8 +23,8 @@
 (define draw-fill-rect (lambda (sdl x y w h)
 			 (sdl2:render-fill-rect! (cdr sdl) (sdl2:make-rect x y w h))))
 
-(define set-color (lambda (sdl r g b)
-		    (sdl2:render-draw-color-set! (cdr sdl) (sdl2:make-color r g b))))
+(define set-color (lambda (sdl col)
+		    (sdl2:render-draw-color-set! (cdr sdl) (apply sdl2:make-color col) )))
 
 (define draw-line (lambda (sdl x1 y1 x2 y2)
 		    (sdl2:render-draw-line! (cdr sdl) x1 y1 x2 y2)))
@@ -24,12 +32,12 @@
 (define distance2 (lambda (x1 y1 x2 y2)
 		    (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2))))
 
-(define render-texture (lambda (sdl texture x y #!optional color)
+(define render-texture (lambda (sdl texture x y #!optional color width height)
 			 (if color (set! (sdl2:texture-color-mod texture) color))
 			 (sdl2:render-copy! (cdr sdl) texture #f 
 					    (sdl2:make-rect x y 
-							    (sdl2:texture-w texture) 
-							    (sdl2:texture-h texture)))))
+							    (if width width (sdl2:texture-w texture))
+							    (if height height (sdl2:texture-h texture))))))
 
 (define make-circle (lambda (radius sdl #!optional color surface comparator)
 		      (let ([surf (if surface 
@@ -62,13 +70,13 @@
 			       (cond 
 				 [(sdl2:quit-event? event) (quit)]
 				 [(sdl2:keyboard-event? event)
-				      (hash-table-set! events 'keyboard
-						       (if (sdl2:keyboard-event-state event)
-							 (set-adjoin (hash-ref events 'keyboard) 
-								     (sdl2:keyboard-event-scancode event))
-							 (set-delete (hash-ref events 'keyboard)
-								     (sdl2:keyboard-event-scancode 
-								       event))))])
+				  (hash-table-set! events 'keyboard
+						   (if (sdl2:keyboard-event-state event)
+						     (set-adjoin (hash-ref events 'keyboard) 
+								 (sdl2:keyboard-event-scancode event))
+						     (set-delete (hash-ref events 'keyboard)
+								 (sdl2:keyboard-event-scancode 
+								   event))))])
 			       (get-events events quit)]
 			     [else events])))
 
@@ -106,10 +114,10 @@
 				     (let ([offset (- (quotient 1000 60) (- (sdl2:get-ticks) time))])
 				       (sdl2:delay! (if (> offset 0) offset 0)))
 				     (let ([last-time (sdl2:get-ticks)])
-				     (call/cc (lambda (return)
-						(set! events (get-events events (lambda () (return world))))
-						(let* ([state (make-state world sdl return events)])
-						  (run (big-bang state body body* ...) last-time ))))))]) 
+				       (call/cc (lambda (return)
+						  (set! events (get-events events (lambda () (return world))))
+						  (let* ([state (make-state world sdl return events)])
+						    (run (big-bang state body body* ...) last-time ))))))]) 
 		       (run (init-proc sdl) 0 ))
 		     (sdl2:destroy-window! (car sdl)))))
 		((_ state (on-draw proc) body ...)
