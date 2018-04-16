@@ -11,14 +11,14 @@
 
 (define hash-update (lambda (table . rest)
 		      (let ([table (hash-table-copy table)])
-		      (cond [(> 2 (length rest)) (raise "Not enough arguments")]
-			    [(>= 2 (length rest)) 
-			     (hash-table-update! table (car rest) (cadr rest))]
-			    [else 
-		      (hash-table-update!
-		      (apply hash-ref (cons table (reverse (cddr (reverse rest)))))
-		      (cadr (reverse rest))
-		      (car (reverse rest)))]) table )))
+			(cond [(> 2 (length rest)) (raise "Not enough arguments")]
+			      [(>= 2 (length rest)) 
+			       (hash-table-update! table (car rest) (cadr rest))]
+			      [else 
+				(hash-table-update!
+				  (apply hash-ref (cons table (reverse (cddr (reverse rest)))))
+				  (cadr (reverse rest))
+				  (car (reverse rest)))]) table )))
 
 (define-syntax make-hash 
   (syntax-rules ()
@@ -38,11 +38,15 @@
 		    (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2))))
 
 (define render-texture (lambda (sdl texture x y #!optional color width height)
-			 (if color (set! (sdl2:texture-color-mod texture) color))
-			 (sdl2:render-copy! (cdr sdl) texture #f 
-					    (sdl2:make-rect x y 
-							    (if width width (sdl2:texture-w texture))
-							    (if height height (sdl2:texture-h texture))))))
+			 (let ([width (if width width (sdl2:texture-w texture))]
+			       [height (if height height (sdl2:texture-h texture))])
+			   (if color (set! (sdl2:texture-color-mod texture) color))
+			   (sdl2:render-copy! (cdr sdl) texture #f 
+					      (sdl2:make-rect 
+						(- x (quotient width 2)) 
+						(- y (quotient height 2)) 
+						width 
+						height)))))
 
 (define make-circle (lambda (radius sdl #!optional color surface comparator)
 		      (let ([surf (if surface 
