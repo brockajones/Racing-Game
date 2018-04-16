@@ -17,6 +17,16 @@
 			      (apply draw-line (cons sdl point)))
 			    (hash-ref world 'track))))
 
+(define reflection (lambda (vec line)
+		     (let* ([vec-angle (if (= 0 (car vec)) 0 (atan (/ (cdr vec) (car vec))))]
+			    [line-angle (if (= 0 (- (second line) (fourth line))) 0
+					  (atan (/ (- (first line) (third line))  (-(second line) (fourth line)))))]
+			    [vec-distance (distance 0 0 (car vec) (cdr vec))]
+			    [new-angle (* -1 (-  line-angle vec-angle))])
+		       (display line-angle)
+		       (newline)
+		       (cons (* (cos new-angle) vec-distance) (* (sin new-angle) vec-distance)))))
+
 (define pi 3.141592)
 
 (define distance (lambda (x1 y1 x2 y2)
@@ -34,30 +44,32 @@
 			 [b-hat (cons (/ (car line-b) b-distance) (/ (cdr line-b) b-distance))]
 			 [a1 (cons (* (car b-hat) a1-length) (* (cdr b-hat) a1-length))]
 			 [a2-start (cons (+ (car a1) (first line-seg)) (+ (cdr a1) (second line-seg)))])
-		    (if (or (> a1-length b-distance) (< (car line-a) 0)) #f
+		    (if (or (> a1-length b-distance) #f) #f
 		      (map floor (list (car a2-start) (cdr a2-start) (car point) (cdr point)))))))
 
 (define bounce (lambda (world sdl)
-		 (let ([res (map 
+		 (let* ( [res (map 
 			      (lambda (line) (let ([proj 
 						     (project line 
 							      (hash-ref world 'circle-a 'pos))])
 					       (cond [proj
 						       (apply draw-line (cons sdl proj))
-						       (list (> 15 (apply distance proj)) line proj)]
+						       (list (>= 15 (apply distance proj)) line proj)]
 						     [else #f])))
-			      (hash-ref world 'track))])
-		   (if (and (not (hash-ref world 'circle-a 'bounce)) 
-			    (> (length (filter car 
-					       (filter (lambda (x) x) res ))) 0)) 
+			      (hash-ref world 'track))]
+			[filtered (filter car 
+					       (filter (lambda (x) x) res ))])
+		   (if (and (not (hash-ref world 'circle-a 'bounce))
+			    (> (length filtered) 0)) 
 		     (hash-update (hash-update world 'circle-a 'bounce (lambda (x) #t))
-				  'circle-a 'vel (lambda (x) (cons (* -1 (car x)) (* -1 (cdr x)))))
+				  'circle-a 'vel (lambda (x) 
+						   (reflection x (third (car filtered)))))
 		     (hash-update world 'circle-a 'bounce (lambda (x) #f))))))
 
 (big-bang (init-world (lambda (sdl) (make-hash 
-				      (track '(;(10 10 1000 10) (1000 400 1000 10) 
-					;		       (1000 400 10 500) (10 10 12 500)
-							       (200 200 800 200)))
+				      (track '((10 10 1000 10) (1000 400 1000 10) 
+					       		       (1000 400 10 500) (10 10 12 500)
+					       (200 200 800 800)))
 				      (circle-a (make-hash
 						  (bounce #f)
 						  (image (make-circle 30 sdl #f #f 

@@ -10,15 +10,15 @@
 			 [else (hash-table-ref table (car keys))])))
 
 (define hash-update (lambda (table . rest)
-		      (let ([table (hash-table-copy table)])
+		      (let ([tb (hash-table-copy table)])
 			(cond [(> 2 (length rest)) (raise "Not enough arguments")]
 			      [(>= 2 (length rest)) 
-			       (hash-table-update! table (car rest) (cadr rest))]
+			       (hash-table-update! tb (car rest) (cadr rest))]
 			      [else 
 				(hash-table-update!
-				  (apply hash-ref (cons table (reverse (cddr (reverse rest)))))
+				  (apply hash-ref (cons tb (reverse (cddr (reverse rest)))))
 				  (cadr (reverse rest))
-				  (car (reverse rest)))]) table )))
+				  (car (reverse rest)))]) tb )))
 
 (define-syntax make-hash 
   (syntax-rules ()
@@ -120,7 +120,7 @@
 			  [events (make-events (make-set))])
 		     (letrec ([run (lambda (world time)
 				     ;Locks framerate at 60
-				     (let ([offset (- (quotient 1000 60) (- (sdl2:get-ticks) time))])
+				     (let ([offset (- (quotient 1000 10) (- (sdl2:get-ticks) time))])
 				       (sdl2:delay! (if (> offset 0) offset 0)))
 				     (let ([last-time (sdl2:get-ticks)])
 				       (call/cc (lambda (return)
