@@ -120,7 +120,7 @@
 			  [events (make-events (make-set))])
 		     (letrec ([run (lambda (world time)
 				     ;Locks framerate at 60
-				     (let ([offset (- (quotient 1000 10) (- (sdl2:get-ticks) time))])
+				     (let ([offset (- (quotient 1000 60) (- (sdl2:get-ticks) time))])
 				       (sdl2:delay! (if (> offset 0) offset 0)))
 				     (let ([last-time (sdl2:get-ticks)])
 				       (call/cc (lambda (return)
