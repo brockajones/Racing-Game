@@ -19,7 +19,7 @@
 
 (define reflection (lambda (vec line)
 		     (let* ( [line-angle (atan (-(second line) (fourth line))
-						      (- (first line) (third line)))]
+					       (- (first line) (third line)))]
 			    [vec-angle (atan (cdr vec) (car vec))]
 			    [new-angle (- line-angle (abs (- line-angle vec-angle)))]
 			    [vec-length (distance 0 0 (car vec) (cdr vec))]
@@ -27,7 +27,6 @@
 					   (+ line-angle (abs (- line-angle vec-angle)))
 					   new-angle)])
 		       (cons (round (* vec-length (cos final-angle))) (round (* vec-length (sin final-angle)))))))
-
 
 (define pi 3.141592)
 
@@ -88,28 +87,6 @@
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (set-color sdl (invert c))
 		       (render-track world sdl)
-
-		       ;(display (hash-ref world 'circle-a 'vel))
-		       ;(newline)
-
-		       (define draw-trail (lambda (points)
-					    (cond [(> (length points) 1)
-					    (draw-line sdl 
-						       (round (car (first points))) (round (cdr (first points))) 
-						       (round (car (second points))) (round (cdr (second points))))
-					   (draw-trail (cddr points)) ])))
-
-		       ;(draw-trail (hash-ref world 'trail))
-
-
-		       (define addit (lambda (vec)
-				       (list 300 300 (+ 300 (car vec)) (+ 300 (cdr vec)))))
-
-		       (define addit2 (lambda (vec)
-					(list 600 300 (+ 600 (car vec)) (+ 300 (cdr vec)))))
-
-		       (draw-line sdl 640 360 (+ (round (* 50 (cos a-angle))) 640) 
-				  (+ (round (* 50 (sin a-angle))) 360))
 
 		       (bounce world sdl)
 		       (let ([return
