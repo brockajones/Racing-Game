@@ -25,11 +25,7 @@
 			theta))))
 
 (define get-angle2 (lambda (x y)
-		     (let ([addition (cond [(and (>= x 0) (>= y 0)) 0]
-					   [(and (< x 0) (>= y 0)) (/ pi 2)]
-					   [(and (< x 0) (< y 0)) pi]
-					   [(and (>= x 0) (< y 0)) (* 1.5 pi)])])
-		       (- addition (atan (/ (abs y) (abs x)))))))
+		       (atan y x)))
 
 
 
@@ -37,13 +33,17 @@
 		     (let* ( [line-angle (get-angle2 (- (first line) (third line))
 						      (-(second line) (fourth line)))]
 			    [vec-angle (get-angle2 (car vec) (cdr vec))]
-			    [new-angle pi ])
-		       ;(display (* (/ 180 pi) vec-angle))
-		       (display vec)
+			    [new-angle (- line-angle (abs (- line-angle vec-angle)))]
+			    [vec-length (distance 0 0 (car vec) (cdr vec))]
+			    [final-angle (if (= new-angle vec-angle) 
+					   (+ line-angle (abs (- line-angle vec-angle)))
+					   new-angle)])
+
+		       
+		       (display (* (/ 180 pi) (abs (- line-angle vec-angle))))
+		       ;(display vec)
 		       (newline)
-		       (cons (round (- (* (cos new-angle) (car vec)) (* (sin new-angle) (cdr vec))))
-			     (round  (+ (* (sin new-angle) (car vec)) (* (cos new-angle) (cdr vec))))
-		     ))))
+		       (cons (round (* vec-length (cos final-angle))) (round (* vec-length (sin final-angle)))))))
 
 
 (define pi 3.141592)
@@ -87,8 +87,11 @@
 			 [(null? leftover) (hash-update world 'circle-a 'bounce (lambda (x) #f)) ]
 			 [else world]))))
 
+(define a-angle 0)
+
 
 (big-bang (init-world (lambda (sdl) (make-hash 
+				      (trail '())
 				      (track '((640 0 0 360) (640 0 1280 360) (1280 360 640 720)
 							     (640 720 0 360)))
 				      (circle-a (make-hash
@@ -106,8 +109,17 @@
 		       (set-color sdl (invert c))
 		       (render-track world sdl)
 
-		       (display (hash-ref world 'circle-a 'vel))
-		       (newline)
+		       ;(display (hash-ref world 'circle-a 'vel))
+		       ;(newline)
+
+		       (define draw-trail (lambda (points)
+					    (cond [(> (length points) 1)
+					    (draw-line sdl 
+						       (round (car (first points))) (round (cdr (first points))) 
+						       (round (car (second points))) (round (cdr (second points))))
+					   (draw-trail (cddr points)) ])))
+
+		       ;(draw-trail (hash-ref world 'trail))
 
 
 		       (define addit (lambda (vec)
@@ -115,6 +127,11 @@
 
 		       (define addit2 (lambda (vec)
 					(list 600 300 (+ 600 (car vec)) (+ 300 (cdr vec)))))
+
+		       (draw-line sdl 640 360 (+ (round (* 50 (cos a-angle))) 640) 
+				  (+ (round (* 50 (sin a-angle))) 360))
+
+		       (set! a-angle (get-angle2 (car (hash-ref world 'circle-a 'vel)) (cdr (hash-ref world 'circle-a 'vel))))
 
 
 		;       (let* ([vec '( -1 . -30)]
@@ -128,7 +145,7 @@
 			       (bounce (render-circles 
 					 (hash-update world 'color (lambda (x) (+ 0.1 x)))
 					 sdl
-					 (invert c)) sdl) ])
+					 (invert c)) sdl)])
 			 (set-color sdl c) return))))
 	  (on-key (lambda (world event) (let ([m (cond [(equal? event 'up) '(0 . -1)]
 						       [(equal? event 'down) '(0 . 1)]
