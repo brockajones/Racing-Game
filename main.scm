@@ -17,32 +17,15 @@
 			      (apply draw-line (cons sdl point)))
 			    (hash-ref world 'track))))
 
-
-(define get-angle (lambda (x y)
-		    (let ([theta (atan (/ (abs y) (abs x)))])
-		      (if (> 0 (* x y))
-			(- pi  theta)
-			theta))))
-
-(define get-angle2 (lambda (x y)
-		       (atan y x)))
-
-
-
 (define reflection (lambda (vec line)
-		     (let* ( [line-angle (get-angle2 (- (first line) (third line))
-						      (-(second line) (fourth line)))]
-			    [vec-angle (get-angle2 (car vec) (cdr vec))]
+		     (let* ( [line-angle (atan (-(second line) (fourth line))
+						      (- (first line) (third line)))]
+			    [vec-angle (atan (cdr vec) (car vec))]
 			    [new-angle (- line-angle (abs (- line-angle vec-angle)))]
 			    [vec-length (distance 0 0 (car vec) (cdr vec))]
 			    [final-angle (if (= new-angle vec-angle) 
 					   (+ line-angle (abs (- line-angle vec-angle)))
 					   new-angle)])
-
-		       
-		       (display (* (/ 180 pi) (abs (- line-angle vec-angle))))
-		       ;(display vec)
-		       (newline)
 		       (cons (round (* vec-length (cos final-angle))) (round (* vec-length (sin final-angle)))))))
 
 
@@ -87,9 +70,6 @@
 			 [(null? leftover) (hash-update world 'circle-a 'bounce (lambda (x) #f)) ]
 			 [else world]))))
 
-(define a-angle 0)
-
-
 (big-bang (init-world (lambda (sdl) (make-hash 
 				      (trail '())
 				      (track '((640 0 0 360) (640 0 1280 360) (1280 360 640 720)
@@ -131,15 +111,6 @@
 		       (draw-line sdl 640 360 (+ (round (* 50 (cos a-angle))) 640) 
 				  (+ (round (* 50 (sin a-angle))) 360))
 
-		       (set! a-angle (get-angle2 (car (hash-ref world 'circle-a 'vel)) (cdr (hash-ref world 'circle-a 'vel))))
-
-
-		;       (let* ([vec '( -1 . -30)]
-		;	      [line '(200 200 400 400)]
-		;	      [res (reflection vec line)])
-		;	 (apply draw-line (cons sdl line))
-		;	 (apply draw-line (cons sdl (addit vec)))
-		;	 (apply draw-line (cons sdl (addit res))))
 		       (bounce world sdl)
 		       (let ([return
 			       (bounce (render-circles 
