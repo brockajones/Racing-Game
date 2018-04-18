@@ -17,16 +17,26 @@
 			      (apply draw-line (cons sdl point)))
 			    (hash-ref world 'track))))
 
+(define tup-map (lambda (proc tup)
+		  (cons (proc (car tup)) (proc (cdr tup)))))
+
 (define reflection (lambda (vec line)
+		     (define angle->vec (lambda (d l)
+					  (cons (round (* l (cos d))) 
+						(round (* l (sin d))))))
+
 		     (let* ( [line-angle (atan (-(second line) (fourth line))
 					       (- (first line) (third line)))]
 			    [vec-angle (atan (cdr vec) (car vec))]
-			    [new-angle (- line-angle (abs (- line-angle vec-angle)))]
 			    [vec-length (distance 0 0 (car vec) (cdr vec))]
-			    [final-angle (if (= new-angle vec-angle) 
+			    [new-angle (- line-angle (abs (- line-angle vec-angle)))]
+			    [final-angle (if (equal? (angle->vec new-angle vec-length)
+						     (tup-map exact->inexact vec))
 					   (+ line-angle (abs (- line-angle vec-angle)))
 					   new-angle)])
-		       (cons (round (* vec-length (cos final-angle))) (round (* vec-length (sin final-angle)))))))
+		       ;(display vec) (display ":") (display (angle->vec final-angle vec-length)) (newline)
+		       (angle->vec final-angle vec-length)
+		       )))
 
 (define pi 3.141592)
 
@@ -59,10 +69,10 @@
 						       [else #f])))
 				(hash-ref world 'track))]
 			[leftover (filter (lambda (x) (and x (car x))) res)])
-		   (cond [(and (not (null? leftover)) 
-			       (not (hash-ref world 'circle-a 'bounce)))  
+		   (cond [(and (not (null? leftover))
+			       (not (equal? (second (car leftover)) (hash-ref world 'circle-a 'bounce))))  
 			  (hash-update (hash-update world 'circle-a 'bounce 
-						    (lambda (x) #t)) 'circle-a 'vel 
+						    (lambda (x) (second (car leftover)))) 'circle-a 'vel 
 				       (lambda (x) 
 					 (reflection x 
 						     (second (car leftover)))))]
@@ -72,7 +82,9 @@
 (big-bang (init-world (lambda (sdl) (make-hash 
 				      (trail '())
 				      (track '((640 0 0 360) (640 0 1280 360) (1280 360 640 720)
-							     (640 720 0 360)))
+							     (640 720 0 360)
+							     (640 100 100 360) (640 100 1180 360) (1180 360 640 620)
+							     (640 620 100 360)))
 				      (circle-a (make-hash
 						  (bounce #f)
 						  (image (make-circle 30 sdl #f #f 
@@ -80,14 +92,13 @@
 									(or 
 									  (and (> a b) (< (/ a 2) b) ) 
 									  (> (/ a 10) b) ))))
-						  (pos (cons 640 300))
+						  (pos (cons 35 360))
 						  (vel (cons 0 0))))
 				      (color 0))) 1280 720)
 	  (on-draw (lambda (world sdl) 
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (set-color sdl (invert c))
 		       (render-track world sdl)
-
 		       (bounce world sdl)
 		       (let ([return
 			       (bounce (render-circles 
@@ -100,6 +111,8 @@
 						       [(equal? event 'left) '(-1 . 0)]
 						       [(equal? event 'right) '(1 . 0)]
 						       [else '(0 . 0)])])
+					  (if (hash-ref world 'circle-a 'bounce)
+					    world
 					  (hash-update world 'circle-a 'vel 
 						       (lambda (vel) (cons (+ (car vel) (car m)) 
-									   (+ (cdr vel) (cdr m)))))))))
+									   (+ (cdr vel) (cdr m))))))))))
