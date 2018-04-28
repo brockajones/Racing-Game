@@ -34,9 +34,7 @@
 						     (tup-map exact->inexact vec))
 					   (+ line-angle (abs (- line-angle vec-angle)))
 					   new-angle)])
-		       ;(display vec) (display ":") (display (angle->vec final-angle vec-length)) (newline)
-		       (angle->vec final-angle vec-length)
-		       )))
+		       (angle->vec final-angle vec-length))))
 
 (define pi 3.141592)
 
@@ -64,23 +62,25 @@
 						       (project line 
 								(hash-ref world 'circle-a 'pos))])
 						 (cond [proj
-							 (apply draw-line (cons sdl proj))
+							 ;(apply draw-line (cons sdl proj))
 							 (list (>= 15 (apply distance proj)) line proj)]
 						       [else #f])))
 				(hash-ref world 'track))]
-			[leftover (filter (lambda (x) (and x (car x))) res)])
-		   (cond [(and (not (null? leftover))
-			       (not (equal? (second (car leftover)) (hash-ref world 'circle-a 'bounce))))  
-			  (hash-update (hash-update world 'circle-a 'bounce 
-						    (lambda (x) (second (car leftover)))) 'circle-a 'vel 
-				       (lambda (x) 
-					 (reflection x 
-						     (second (car leftover)))))]
-			 [(null? leftover) (hash-update world 'circle-a 'bounce (lambda (x) #f)) ]
-			 [else world]))))
+			[leftover (filter (lambda (x) (and x (car x))) res)]
+			[pos (hash-ref world 'circle-a 'pos)])
+		   (cond 
+		     [(and (not (null? leftover))
+			   (not (equal? (second (car leftover)) (hash-ref world 'circle-a 'bounce))))  
+		      (hash-update (hash-update world 'circle-a 'bounce 
+						(lambda (x) (second (car leftover)))) 'circle-a 'vel 
+				   (lambda (x) 
+				     (tup-map (lambda (y) (inexact->exact (round (* 0.8 y))))
+					      (reflection x 
+							  (second (car leftover))))))]
+		     [(null? leftover) (hash-update world 'circle-a 'bounce (lambda (x) #f)) ]
+		     [else world]))))
 
 (big-bang (init-world (lambda (sdl) (make-hash 
-				      (trail '())
 				      (track '((640 0 0 360) (640 0 1280 360) (1280 360 640 720)
 							     (640 720 0 360)
 							     (640 100 100 360) (640 100 1180 360) (1180 360 640 620)
@@ -113,6 +113,6 @@
 						       [else '(0 . 0)])])
 					  (if (hash-ref world 'circle-a 'bounce)
 					    world
-					  (hash-update world 'circle-a 'vel 
-						       (lambda (vel) (cons (+ (car vel) (car m)) 
-									   (+ (cdr vel) (cdr m))))))))))
+					    (hash-update world 'circle-a 'vel 
+							 (lambda (vel) (cons (+ (car vel) (car m)) 
+									     (+ (cdr vel) (cdr m))))))))))
