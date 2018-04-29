@@ -20,13 +20,15 @@
 (define tup-map (lambda (proc tup)
 		  (cons (proc (car tup)) (proc (cdr tup)))))
 
-(define reflection (lambda (vec line)
-		     (define angle->vec (lambda (d l)
-					  (cons (round (* l (cos d))) 
-						(round (* l (sin d))))))
+(define angle->vec (lambda (d l)
+		     (cons (round (* l (cos d))) 
+			   (round (* l (sin d))))))
+(define reflection (lambda (vec line d-line)
 
-		     (let* ( [line-angle (atan (-(second line) (fourth line))
-					       (- (first line) (third line)))]
+		     (let* ([line-angle (atan (-(second line) (fourth line))
+					      (- (first line) (third line)))]
+			    [d-angle (atan (- (second d-line) (fourth d-line))
+					   (- (first d-line) (third d-line)))]
 			    [vec-angle (atan (cdr vec) (car vec))]
 			    [vec-length (distance 0 0 (car vec) (cdr vec))]
 			    [new-angle (- line-angle (abs (- line-angle vec-angle)))]
@@ -34,7 +36,9 @@
 						     (tup-map exact->inexact vec))
 					   (+ line-angle (abs (- line-angle vec-angle)))
 					   new-angle)])
-		       (angle->vec final-angle vec-length))))
+		       (set! angle-a vec-angle)
+		       (cond [(< (/ pi 2) (abs (- d-angle vec-angle))) vec]
+			     [(angle->vec final-angle vec-length)]))))
 
 (define pi 3.141592)
 
@@ -69,16 +73,16 @@
 			[leftover (filter (lambda (x) (and x (car x))) res)]
 			[pos (hash-ref world 'circle-a 'pos)])
 		   (cond 
-		     [(and (not (null? leftover))
-			   (not (equal? (second (car leftover)) (hash-ref world 'circle-a 'bounce))))  
+		     [(and (not (null? leftover)))  
 		      (hash-update (hash-update world 'circle-a 'bounce 
 						(lambda (x) (second (car leftover)))) 'circle-a 'vel 
 				   (lambda (x) 
-				     (tup-map (lambda (y) (inexact->exact (round (* 0.8 y))))
-					      (reflection x 
-							  (second (car leftover))))))]
+				     (reflection x 
+						 (second (car leftover)) (third (car leftover)))))]
 		     [(null? leftover) (hash-update world 'circle-a 'bounce (lambda (x) #f)) ]
 		     [else world]))))
+
+(define angle-a 0)
 
 (big-bang (init-world (lambda (sdl) (make-hash 
 				      (track '((640 0 0 360) (640 0 1280 360) (1280 360 640 720)
@@ -98,6 +102,8 @@
 	  (on-draw (lambda (world sdl) 
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (set-color sdl (invert c))
+		       (let ([vec-a (angle->vec angle-a 50)])
+			 (draw-line sdl 640 360 (+ 640 (car vec-a)) (+ 360 (cdr vec-a))))
 		       (render-track world sdl)
 		       (bounce world sdl)
 		       (let ([return
