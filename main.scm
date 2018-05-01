@@ -31,7 +31,7 @@
 (define angle->vec (lambda (d l)
 		     (cons (round (* l (cos d))) 
 			   (round (* l (sin d))))))
-(define reflection (lambda (vec line d-line)
+(define reflection (lambda (vec line d-line bounce-ratio)
 		     (let* ([line-angle (atan (-(second line) (fourth line))
 					      (- (first line) (third line)))]
 			    [d-angle (atan (-  (fourth d-line) (second d-line))
@@ -42,7 +42,9 @@
 		       (set! angle-a vec-angle)
 		       (set! angle-b d-angle)
 		       (cond [(>= (/ pi 2) (abs (- vec-angle d-angle))) vec]
-			     [else (angle->vec final-angle vec-length)]))))
+			     [else (tup-map 
+				     (lambda (x) (* x bounce-ratio)) 
+				     (angle->vec final-angle vec-length))]))))
 
 (define pi 3.141592)
 
@@ -82,7 +84,7 @@
 						(lambda (x) (second (car leftover)))) 'circle-a 'vel 
 				   (lambda (x) 
 				     (reflection x 
-						 (second (car leftover)) (third (car leftover)))))]
+						 (second (car leftover)) (third (car leftover)) 0.8)))]
 		     [(null? leftover) (hash-update world 'circle-a 'bounce (lambda (x) #f)) ]
 		     [else world]))))
 
