@@ -1,5 +1,6 @@
 (include "universe.scm")
 (include "color.scm")
+(include "math.scm")
 (use (prefix sdl2 sdl2:)
      (prefix sdl2-ttf ttf:))
 
@@ -9,29 +10,17 @@
 				[vel (hash-ref world 'circle-a 'vel)])
 			   (render-texture sdl texture (round (car pos)) (round (cdr pos)) col 30 30)
 			   (hash-update world 'circle-a 'pos (lambda (x) 
-							       (cons (+ (car x) (/ (car vel) 10))
-								     (+ (cdr x) (/ (cdr vel) 10))))))))
+							       (cons (+ (car x) (car vel) )
+								     (+ (cdr x) (cdr vel))))))))
 
 (define render-track (lambda (world sdl)
 		       (map (lambda (point)
 			      (apply draw-line (cons sdl point)))
 			    (hash-ref world 'track))))
 
-(define tup-map (lambda (proc tup)
-		  (cons (proc (car tup)) (proc (cdr tup)))))
 
-(define fix-angle (lambda (rad)
-		    (cond [(> rad (* 2 pi)) (fix-angle (- rad (* 2 pi)))]
-			  [(< rad 0) (+ (* 2 pi) rad)]
-			  [else rad])))
 
-(define rad->deg (lambda (rad)
-		   (* rad (/ 180 pi))))
-
-(define angle->vec (lambda (d l)
-		     (cons (round (* l (cos d))) 
-			   (round (* l (sin d))))))
-(define reflection (lambda (vec line d-line bounce-ratio)
+(define reflection (lambda (vec line d-line)
 		     (let* ([line-angle (atan (-(second line) (fourth line))
 					      (- (first line) (third line)))]
 			    [d-angle (atan (-  (fourth d-line) (second d-line))
@@ -41,15 +30,10 @@
 			    [final-angle (+ d-angle (- d-angle (fix-angle (+ pi vec-angle))))])
 		       (set! angle-a vec-angle)
 		       (set! angle-b d-angle)
+		       (display vec-length)
+		       (newline)
 		       (cond [(>= (/ pi 2) (abs (- vec-angle d-angle))) vec]
-			     [else (tup-map 
-				     (lambda (x) (* x bounce-ratio)) 
-				     (angle->vec final-angle vec-length))]))))
-
-(define pi 3.141592)
-
-(define distance (lambda (x1 y1 x2 y2)
-		   (sqrt (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2)))))
+			     [else (angle->vec final-angle vec-length)]))))
 
 (define project (lambda (line-seg point)
 		  (define get-angle (lambda (x)
@@ -84,8 +68,10 @@
 						(lambda (x) (second (car leftover)))) 'circle-a 'vel 
 				   (lambda (x) 
 				     (reflection x 
-						 (second (car leftover)) (third (car leftover)) 0.8)))]
-		     [(null? leftover) (hash-update world 'circle-a 'bounce (lambda (x) #f)) ]
+						 (second (car leftover)) (third (car leftover)))))]
+		     [(null? leftover) (cond [(hash-ref world 'circle-a 'bounce) (display "bounce") 
+										 (newline)])
+							(hash-update world 'circle-a 'bounce (lambda (x) #f)) ]
 		     [else world]))))
 
 (define angle-a 0)
@@ -114,7 +100,6 @@
 			 (draw-line sdl 640 360 (+ 640 (car vec-a)) (+ 360 (cdr vec-a)))
 			 (draw-line sdl 640 360 (+ 640 (car vec-b)) (+ 360 (cdr vec-b))))
 		       (render-track world sdl)
-		       (bounce world sdl)
 		       (let ([return
 			       (bounce (render-circles 
 					 (hash-update world 'color (lambda (x) (+ 0.1 x)))
@@ -129,5 +114,5 @@
 					  (if (hash-ref world 'circle-a 'bounce)
 					    world
 					    (hash-update world 'circle-a 'vel 
-							 (lambda (vel) (cons (+ (car vel) (car m)) 
-									     (+ (cdr vel) (cdr m))))))))))
+							 (lambda (vel) (cons (+ (car vel) (/ (car m) 10)) 
+									     (+ (cdr vel) (/ (cdr m) 10))))))))))
