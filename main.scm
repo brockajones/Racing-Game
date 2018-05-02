@@ -18,8 +18,6 @@
 			      (apply draw-line (cons sdl point)))
 			    (hash-ref world 'track))))
 
-
-
 (define reflection (lambda (vec line d-line)
 		     (let* ([line-angle (atan (-(second line) (fourth line))
 					      (- (first line) (third line)))]
@@ -30,8 +28,6 @@
 			    [final-angle (+ d-angle (- d-angle (fix-angle (+ pi vec-angle))))])
 		       (set! angle-a vec-angle)
 		       (set! angle-b d-angle)
-		       (display vec-length)
-		       (newline)
 		       (cond [(>= (/ pi 2) (abs (- vec-angle d-angle))) vec]
 			     [else (angle->vec final-angle vec-length)]))))
 
@@ -69,9 +65,11 @@
 				   (lambda (x) 
 				     (reflection x 
 						 (second (car leftover)) (third (car leftover)))))]
-		     [(null? leftover) (cond [(hash-ref world 'circle-a 'bounce) (display "bounce") 
-										 (newline)])
-							(hash-update world 'circle-a 'bounce (lambda (x) #f)) ]
+		     [(null? leftover) 
+							(hash-update (cond [(hash-ref world 'circle-a 'bounce) 
+										  (hash-update world 'circle-a 'vel
+							(lambda (vel) (tup-map (lambda (x) (* 0.8 x)) vel)))]
+										 [else world]) 'circle-a 'bounce (lambda (x) #f))]
 		     [else world]))))
 
 (define angle-a 0)
