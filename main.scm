@@ -18,6 +18,17 @@
 			      (apply draw-line (cons sdl point)))
 			    (hash-ref world 'track))))
 
+(define render-checker (lambda (sdl x y wc hc s) ;wc/hc is the number of squares
+			 (define render-hor (lambda (x2 wc2)
+					      (cond [(> wc2 0) 
+						     (draw-fill-rect sdl x2 y s s)
+						     (render-hor (+ x2 s s) (- wc2 2))])))
+			 (cond [(> hc 0)
+				(if  (= 0 (modulo hc 2))
+				(render-hor x wc)
+				(render-hor (+ s x) (- wc 1)))
+				(render-checker sdl x (+ y s) wc (- hc 1) s)])))
+
 (define reflection (lambda (vec line d-line)
 		     (let* ([line-angle (atan (-(second line) (fourth line))
 					      (- (first line) (third line)))]
@@ -98,6 +109,7 @@
 	  (on-draw (lambda (world sdl) 
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (set-color sdl (invert c))
+		       (render-checker sdl 0 0 50 50 5)
 		       (let ([vec-a (angle->vec angle-a 50)]
 			     [vec-b (angle->vec angle-b 100)])
 			 (draw-line sdl 640 360 (+ 640 (car vec-a)) (+ 360 (cdr vec-a)))
