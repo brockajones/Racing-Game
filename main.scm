@@ -28,8 +28,9 @@
 			    [final-angle (+ d-angle (- d-angle (fix-angle (+ pi vec-angle))))])
 		       (set! angle-a vec-angle)
 		       (set! angle-b d-angle)
-		       (cond [(>= (/ pi 2) (abs (- vec-angle d-angle))) vec]
-			     [else (angle->vec final-angle vec-length)]))))
+		       (cond 
+			 [(>= (/ pi 2) (abs (- vec-angle d-angle))) vec]
+			 [else (angle->vec final-angle vec-length)]))))
 
 (define project (lambda (line-seg point)
 		  (define get-angle (lambda (x)
@@ -46,6 +47,9 @@
 		    (if (or (> a1-length b-distance) #f) #f
 		      (map round (list (car a2-start) (cdr a2-start) (car point) (cdr point)))))))
 
+(define vec-distance2 (lambda (vec)
+		    (+ (expt (car vec) 2) (expt (cdr vec) 2))))
+
 (define bounce (lambda (world sdl)
 		 (let* ( [res (map 
 				(lambda (line) (let ([proj 
@@ -59,17 +63,18 @@
 			[leftover (filter (lambda (x) (and x (car x))) res)]
 			[pos (hash-ref world 'circle-a 'pos)])
 		   (cond 
-		     [(and (not (null? leftover)))  
+		     [(not (null? leftover))
 		      (hash-update (hash-update world 'circle-a 'bounce 
 						(lambda (x) (second (car leftover)))) 'circle-a 'vel 
 				   (lambda (x) 
 				     (reflection x 
 						 (second (car leftover)) (third (car leftover)))))]
 		     [(null? leftover) 
-							(hash-update (cond [(hash-ref world 'circle-a 'bounce) 
-										  (hash-update world 'circle-a 'vel
-							(lambda (vel) (tup-map (lambda (x) (* 0.8 x)) vel)))]
-										 [else world]) 'circle-a 'bounce (lambda (x) #f))]
+		      (hash-update (cond [(and (hash-ref world 'circle-a 'bounce)
+					   (> (vec-distance2 (hash-ref world 'circle-a 'vel)) 1.0))
+					  (hash-update world 'circle-a 'vel
+						       (lambda (vel) (tup-map (lambda (x) (* 0.8 x)) vel)))]
+					 [else world]) 'circle-a 'bounce (lambda (x) #f))]
 		     [else world]))))
 
 (define angle-a 0)
