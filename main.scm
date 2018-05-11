@@ -92,10 +92,16 @@
 (define angle-b 0)
 
 (big-bang (init-world (lambda (sdl) (make-hash 
-				      (track '((640 0 0 360) (640 0 1280 360) (1280 360 640 720)
-							     (640 720 0 360)
-							     (640 100 100 360) (640 100 1180 360) (1180 360 640 620)
-							     (640 620 100 360)))
+				      (track '((640 0 0 360) 
+					       (640 0 1280 360) 
+					       (1280 360 680 720)
+					       (600 720 0 360)
+					       (640 100 100 360) 
+					       (640 100 1180 360) 
+					       (1180 360 680 620)
+					       (600 620 100 360)
+					       (600 620 680 620)
+					       (600 720 680 720)))
 				      (circle-a (make-hash
 						  (bounce #f)
 						  (image (make-circle 30 sdl #f #f 
@@ -105,11 +111,18 @@
 									  (> (/ a 10) b) ))))
 						  (pos (cons 35 360))
 						  (vel (cons 0 0))))
+				      (circle-b (make-hash
+						  (bounce #f)
+						  (image (make-circle 30 sdl #f #f
+								      (lambda (a b)
+									(and (> a b) (< (/ a 2) b) )))))
+						(pos (cons 35 340))
+						(vel (cons 0 0)))
 				      (color 0))) 1280 720)
 	  (on-draw (lambda (world sdl) 
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (set-color sdl (invert c))
-		       (render-checker sdl 0 0 50 50 5)
+		       (render-checker sdl 600 620 8 10 10)
 		       (let ([vec-a (angle->vec angle-a 50)]
 			     [vec-b (angle->vec angle-b 100)])
 			 (draw-line sdl 640 360 (+ 640 (car vec-a)) (+ 360 (cdr vec-a)))
