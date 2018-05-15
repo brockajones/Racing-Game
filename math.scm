@@ -30,3 +30,5 @@
 (define add (lambda (vec-a vec-b)
 	      (tup-merge + vec-a vec-b)))
 
+(define tup->list (lambda (tup)
+		    (list (car tup) (cdr tup))))
