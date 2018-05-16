@@ -14,8 +14,8 @@
 		   (* rad (/ 180 pi))))
 
 (define angle->vec (lambda (d l)
-		     (cons (round (* l (cos d))) 
-			   (round (* l (sin d))))))
+		     (cons (* l (cos d))
+			   (* l (sin d)))))
 
 (define pi 3.141592)
 
@@ -30,3 +30,5 @@
 (define add (lambda (vec-a vec-b)
 	      (tup-merge + vec-a vec-b)))
 
+(define recurse (lambda (proc . args)
+				 (apply proc (cons proc args))))

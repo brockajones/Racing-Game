@@ -3,6 +3,7 @@
 (include "math.scm")
 (use (prefix sdl2 sdl2:)
      (prefix sdl2-ttf ttf:))
+(use debug)
 
 (define render-circles (lambda (a-world sdl col circles)
 			 (cond [(null? circles) a-world]
@@ -80,11 +81,12 @@
 								(list (>= 15 (apply distance proj)) line proj)]
 							      [else #f])))
 				       (hash-ref world 'track))]
-				[leftover (filter (lambda (x) (and x (car x))) res)]
+				[leftover-result (filter (lambda (x) (and x (car x))) res)]
 				[pos (hash-ref world circle 'pos)]
 				[bounce-decay 0.8])
 			   (cond 
 			     [(and (not (hash-ref world circle 'bounce))
+					 ;Checks for hitting corner
 				   (not (null? (filter 
 						 (lambda (x) (< (distance2 (first x) (second x) (car pos) (cdr pos)) 
 								(expt 15 2)))
@@ -93,13 +95,13 @@
 			      (hash-update (hash-update world circle 'bounce (lambda (x) #t))
 					   circle 'vel (lambda (x) (tup-map 
 								     (lambda (y) (* -1 bounce-decay y)) x)))]
-			     [(not (null? leftover))
+			     [(not (null? leftover-result))
 			      (hash-update (hash-update world circle 'bounce 
-							(lambda (x) (second (car leftover)))) circle 'vel 
+							(lambda (x) (second (car leftover-result)))) circle 'vel 
 					   (lambda (x) 
 					     (reflection x 
-							 (second (car leftover)) (third (car leftover)))))]
-			     [(null? leftover) 
+							 (second (car leftover-result)) (third (car leftover-result)))))]
+			     [(null? leftover-result) 
 			      (hash-update (cond [(and (hash-ref world circle 'bounce)
 						       (> (vec-distance2 (hash-ref world circle 'vel)) 1.0))
 						  (hash-update world circle 'vel
@@ -131,23 +133,23 @@
 									  (and (> a b) (< (/ a 2) b) ) 
 									  (> (/ a 10) b) ))))
 						  (pos (cons 35 360))
-						  (vel (cons 0 0))))
+						  (vel (cons 0.0 0.0))))
 				      (circle-b (make-hash
 						  (bounce #f)
 						  (image (make-circle 30 sdl #f #f 
 								      (lambda (a b)
 									(and (> a b) (< (/ a 2) b) ))))
-						  (pos (cons 35 360))
-						  (vel (cons 0 0))))
+						  (pos (cons 75 360))
+						  (vel (cons 0.0 0.0))))
 				      (color 0))) 1280 720)
 	  (on-draw (lambda (world sdl)
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (set-color sdl (invert c))
 		       (render-checker sdl 600 620 16 20 5)
-		       (let ([vec-a (angle->vec angle-a 50)]
-			     [vec-b (angle->vec angle-b 100)])
-			 (draw-line sdl 640 360 (+ 640 (car vec-a)) (+ 360 (cdr vec-a)))
-			 (draw-line sdl 640 360 (+ 640 (car vec-b)) (+ 360 (cdr vec-b))))
+;		       (let ([vec-a (angle->vec angle-a 50)]
+;			     [vec-b (angle->vec angle-b 100)])
+;			 (draw-line sdl 640 360 (+ 640 (car vec-a)) (+ 360 (cdr vec-a)))
+;			 (draw-line sdl 640 360 (+ 640 (car vec-b)) (+ 360 (cdr vec-b))))
 		       (render-track world sdl)
 		       (let ([return
 			       (bounce (render-circles 
