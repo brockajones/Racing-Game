@@ -32,3 +32,6 @@
 
 (define recurse (lambda (proc . args)
 				 (apply proc (cons proc args))))
+
+(define tup->list (lambda (tup)
+		    (list (car tup) (cdr tup))))

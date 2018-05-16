@@ -110,7 +110,6 @@
 									       vel)))]
 						 [else world]) circle 'bounce (lambda (x) #f))]
 			     [else world]))])))
-
 (define angle-a 0)
 (define angle-b 0)
 
