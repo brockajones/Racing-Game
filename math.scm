@@ -22,6 +22,10 @@
 (define distance (lambda (x1 y1 x2 y2)
 		   (sqrt (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2)))))
 
+(define vec-distance2 (lambda (vec)
+			(+ (expt (car vec) 2) (expt (cdr vec) 2))))
+
+
 (define extend-vec (lambda (vec len)
 		     (let* ([dist (distance 0 0 (car vec) (cdr vec))]
 			    [u-vec (tup-map (lambda (x) (/ x dist)) vec)])
@@ -30,8 +34,12 @@
 (define add (lambda (vec-a vec-b)
 	      (tup-merge + vec-a vec-b)))
 
-(define recurse (lambda (proc . args)
-				 (apply proc (cons proc args))))
-
 (define tup->list (lambda (tup)
 		    (list (car tup) (cdr tup))))
+
+(define-syntax recurse
+ (er-macro-transformer
+  (lambda (exp rename compare)
+   `(letrec ([recur ,(cadr exp)])
+	   (apply recur  (quote ,(cddr exp)))))))
+
