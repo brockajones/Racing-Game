@@ -3,7 +3,6 @@
 (include "math.scm")
 (use (prefix sdl2 sdl2:)
      (prefix sdl2-ttf ttf:))
-(use debug)
 
 (define render-circles (lambda (a-world sdl col circles)
 			 (cond [(null? circles) a-world]
@@ -110,9 +109,6 @@
 									       vel)))]
 						 [else world]) circle 'bounce (lambda (x) #f))]
 			     [else world]))])))
-(define angle-a 0)
-(define angle-b 0)
-
 (big-bang (init-world (lambda (sdl) (make-hash 
 				      (track '((640 0 0 360) 
 					       (640 0 1280 360) 
@@ -145,10 +141,6 @@
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (set-color sdl (invert c))
 		       (render-checker sdl 600 620 16 20 5)
-;		       (let ([vec-a (angle->vec angle-a 50)]
-;			     [vec-b (angle->vec angle-b 100)])
-;			 (draw-line sdl 640 360 (+ 640 (car vec-a)) (+ 360 (cdr vec-a)))
-;			 (draw-line sdl 640 360 (+ 640 (car vec-b)) (+ 360 (cdr vec-b))))
 		       (render-track world sdl)
 		       (let ([return
 			       (bounce (render-circles 
@@ -168,6 +160,9 @@
 						  (hash-update world circle 'vel
 							       (lambda (vel) (tup-merge
 									       (lambda (a b) 
-										 (+ a (/ b 10))) vel m)))))))
+										 (+ a (/ b 15))) vel m)))))))
 		    (check-direction '(up down left right) 'circle-a 
-				     (check-direction '(w s a d) 'circle-b a-world)))))
+				     (check-direction '(w s a d) 'circle-b a-world))))
+	(on-mouse (lambda (a-world event)
+			   (print event)
+			   a-world)))
