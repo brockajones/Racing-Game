@@ -20,6 +20,9 @@
 							(apply hash-ref (cons tb (reverse (cddr (reverse rest)))))
 							(cadr (reverse rest))
 							(car (reverse rest)))]) tb )))
+	
+(define hash-set (lambda (table val . rest)
+				  (apply hash-update (append (list table) rest (list (lambda (x) val))))))
 
 	(define-syntax make-hash 
 	 (syntax-rules ()
