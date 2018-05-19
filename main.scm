@@ -130,6 +130,7 @@
 			     [else world]))])))
 
 (big-bang (init-world (lambda (sdl) (make-hash 
+									 (font (open-font "data/font/OpenSans-Regular.ttf" 40))
 				      (track '((640 0 0 360) 
 					       (640 0 1280 360) 
 					       (1280 360 680 720)
@@ -168,6 +169,7 @@
 		       (set-color sdl (invert c))
 			   (draw-finish-line world sdl)
 		       (render-track world sdl)
+			   (render-texture sdl (make-text (hash-ref world 'font) "Hallo" sdl) 400 400)
 		       (let ([return
 					 (check-finish-line 
 					  (bounce 

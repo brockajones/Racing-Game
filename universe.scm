@@ -52,6 +52,14 @@
 						   width 
 						   height)))))
 
+(define open-font (lambda (path size)
+				   (ttf:open-font path size)))
+
+(define make-text (lambda (font text sdl)
+				   
+					(sdl2:create-texture-from-surface (cdr sdl)
+					 (ttf:render-utf8-blended font text (sdl2:make-color 255 255 255)))))
+
 (define make-circle (lambda (radius sdl #!optional color surface comparator)
 					 (let ([surf (if surface 
 								  surface 
