@@ -56,9 +56,8 @@
 		    (ttf:open-font path size)))
 
 (define make-text (lambda (font text sdl)
-
 		    (sdl2:create-texture-from-surface (cdr sdl)
-						      (ttf:render-utf8-blended font text 
+						      (ttf:render-utf8-solid font text 
 									       (sdl2:make-color 255 255 255)))))
 
 (define make-color (lambda (r g b #!optional a)

@@ -171,10 +171,6 @@
 		       (set-color sdl (invert c))
 		       (draw-finish-line world sdl)
 		       (render-track world sdl)
-		       (define text-texture (make-text (hash-ref world 'font) "Hallo" sdl))
-		       (set! (sdl2:texture-blend-mode text-texture) 'blend)
-		       (texture-alpha-mod-set2! text-texture 100)
-		       (render-texture sdl text-texture  200 400)
 		       (let ([return
 			       (check-finish-line 
 				 (bounce 
@@ -182,7 +178,13 @@
 				     (hash-update world 'color (lambda (x) (+ 0.1 x)))
 				     sdl
 				     (invert c) '(circle-a circle-b)) sdl (hash-ref world 'circles)) 'circle-a)])
-			 (set-color sdl c) return))))
+			 (set-color sdl c)
+			 (define text-texture (make-text (hash-ref world 'font) "Hallo" sdl))
+			 (set! (sdl2:render-draw-blend-mode (cdr sdl)) 'blend)
+			 (dim text-texture)
+			 (render-texture sdl text-texture  200 400)
+
+			 return))))
 	  (on-key (lambda (a-world event) 
 		    (define check-direction (lambda (keys circle world)
 					      (let ([m (cond [(equal? event (first keys)) '(0 . -1)]

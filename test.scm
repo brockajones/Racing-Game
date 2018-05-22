@@ -61,14 +61,13 @@
 			 args: ((SDL_Texture* texture)
 				(Uint8        alpha)))
 
-(: texture-alpha-mod-set2!
-   (sdl2:texture* fixnum -> void))
-(define (texture-alpha-mod-set2! texture alpha)
-    (let ((ret-code (SDL_SetTextureAlphaMod texture alpha)))
-          (unless (zero? ret-code)
-	          (abort "SDL_SetTextureAlphaMod"))))
-
-;(define dim
-;  (foreign-lambda* void ((sdl2:texture* texture))
-;		   "SDL_SetTextureAlphaMod(texture,100);"
-;		   "printf(\"%s\",SDL_GetError());"))
+(define dim
+  (foreign-lambda* void ((SDL_Texture* texture))
+		   "SDL_BlendMode negative = SDL_ComposeCustomBlendMode(
+			   SDL_BLENDFACTOR_ONE_MINUS_DST_COLOR, 
+		   SDL_BLENDFACTOR_ONE_MINUS_SRC_ALPHA, 
+		   SDL_BLENDOPERATION_ADD, 
+		   SDL_BLENDFACTOR_ZERO, 
+		   SDL_BLENDFACTOR_ZERO, 
+		   SDL_BLENDOPERATION_ADD);"
+		   "SDL_SetTextureBlendMode(texture,negative);"))
