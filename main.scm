@@ -1,7 +1,7 @@
 (include "universe.scm")
 (include "color.scm")
 (include "math.scm")
-(include "test.scm")
+(include "invert.scm")
 (use (prefix sdl2 sdl2:)
      (prefix sdl2-ttf ttf:))
 
@@ -132,7 +132,7 @@
 			     [else world]))])))
 
 (big-bang (init-world (lambda (sdl) (make-hash 
-				      (font (open-font "data/font/OpenSans-Regular.ttf" 40))
+				      (font (open-font "data/font/OpenSans-Regular.ttf" 300))
 				      (track '((640 0 0 360) 
 					       (640 0 1280 360) 
 					       (1280 360 680 720)
@@ -147,20 +147,20 @@
 				      (circles '(circle-a circle-b))
 				      (circle-a (make-hash
 						  (bounce #f)
-						  (image (make-circle 30 sdl #f #f 
+						  (image (invert-texture (make-circle 30 sdl #f #f 
 								      (lambda (a b)
 									(or 
 									  (and (> a b) (< (/ a 2) b) ) 
-									  (> (/ a 10) b) ))))
+									  (> (/ a 10) b) )))))
 						  (pos (cons 35 360))
 						  (vel (cons 0.0 0.0))
 						  (lap 0)
 						  (finish-touch #f)))
 				      (circle-b (make-hash
 						  (bounce #f)
-						  (image (make-circle 30 sdl #f #f 
+						  (image (invert-texture (make-circle 30 sdl #f #f 
 								      (lambda (a b)
-									(and (> a b) (< (/ a 2) b) ))))
+									(and (> a b) (< (/ a 2) b) )))))
 						  (pos (cons 75 360))
 						  (vel (cons 0.0 0.0))
 						  (lap 0)
@@ -168,22 +168,20 @@
 				      (color 0))) 1280 720)
 	  (on-draw (lambda (world sdl)
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
-		       (set-color sdl (invert c))
-		       (draw-finish-line world sdl)
-		       (render-track world sdl)
+			  (invert-renderer (cdr sdl))
 		       (let ([return
 			       (check-finish-line 
 				 (bounce 
 				   (render-circles 
 				     (hash-update world 'color (lambda (x) (+ 0.1 x)))
 				     sdl
-				     (invert c) '(circle-a circle-b)) sdl (hash-ref world 'circles)) 'circle-a)])
+				     '(255 255 255) '(circle-a circle-b)) sdl (hash-ref world 'circles)) 'circle-a)])
+			 (set-color sdl '(255 255 255))
+		       (draw-finish-line world sdl)
+		       (render-track world sdl)
+			 
+			 (render-texture sdl (invert-texture (make-text (hash-ref world 'font) "Lap 1" sdl)) 500 400)
 			 (set-color sdl c)
-			 (define text-texture (make-text (hash-ref world 'font) "Hallo" sdl))
-			 (set! (sdl2:render-draw-blend-mode (cdr sdl)) 'blend)
-			 (dim text-texture)
-			 (render-texture sdl text-texture  200 400)
-
 			 return))))
 	  (on-key (lambda (a-world event) 
 		    (define check-direction (lambda (keys circle world)
