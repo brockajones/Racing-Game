@@ -1,6 +1,4 @@
 all:
-	csc main.scm
+	csc -lSDL2 main.scm
 run:
 	./main
-debug:
-	csc -d3 main.scm

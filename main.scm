@@ -1,6 +1,7 @@
 (include "universe.scm")
 (include "color.scm")
 (include "math.scm")
+(include "test.scm")
 (use (prefix sdl2 sdl2:)
      (prefix sdl2-ttf ttf:))
 
@@ -35,26 +36,27 @@
 				(render-checker sdl x (+ y s) wc (- hc 1) s)])))
 
 (define draw-finish-line (lambda (world sdl)
-				   (let ([args (hash-ref world 'finish-line)])
-				   (apply render-checker (cons sdl args)))))
+			   (let ([args (hash-ref world 'finish-line)])
+			     (apply render-checker (cons sdl args)))))
 
 (define check-finish-line (lambda (world circle)
-						   (let* ([circle-pos (hash-ref world circle 'pos)]
-								  [circle-vel (hash-ref world circle 'vel)]
-								  [finish-line (hash-ref world 'finish-line)]
-								  [hit (and (> 15 (abs (- (car circle-pos) (first finish-line))))
-									  (> (cdr circle-pos) (second finish-line))
-									  (< (cdr circle-pos) (+ (second finish-line) 
-														   (* (fourth finish-line) 
-															(fifth finish-line)))))])
-								 (cond [hit 
-								  (hash-set world #t circle 'finish-touch)]
-								  [(and (not hit) (hash-ref world circle 'finish-touch))
-									  (hash-update (hash-set world #f circle 'finish-touch)
-												circle 'lap (lambda (x) (+
-														(/ (car circle-vel) (abs (car circle-vel)))
-													   	x)))]
-								  [else world]))))
+			    (let* ([circle-pos (hash-ref world circle 'pos)]
+				   [circle-vel (hash-ref world circle 'vel)]
+				   [finish-line (hash-ref world 'finish-line)]
+				   [hit (and (> 15 (abs (- (car circle-pos) (first finish-line))))
+					     (> (cdr circle-pos) (second finish-line))
+					     (< (cdr circle-pos) (+ (second finish-line) 
+								    (* (fourth finish-line) 
+								       (fifth finish-line)))))])
+			      (cond [hit 
+				      (hash-set world #t circle 'finish-touch)]
+				    [(and (not hit) (hash-ref world circle 'finish-touch))
+				     (hash-update (hash-set world #f circle 'finish-touch)
+						  circle 'lap (lambda (x) (+
+									    (/ (car circle-vel) 
+									       (abs (car circle-vel)))
+									    x)))]
+				    [else world]))))
 
 (define reflection (lambda (vec line d-line)
 		     (let* ([line-angle (atan (- (second line) (fourth line))
@@ -104,7 +106,7 @@
 				[bounce-decay 0.8])
 			   (cond 
 			     [(and (not (hash-ref world circle 'bounce))
-					 ;Checks for hitting corner
+				   ;Checks for hitting corner
 				   (not (null? (filter 
 						 (lambda (x) (< (distance2 (first x) (second x) (car pos) (cdr pos)) 
 								(expt 15 2)))
@@ -130,7 +132,7 @@
 			     [else world]))])))
 
 (big-bang (init-world (lambda (sdl) (make-hash 
-									 (font (open-font "data/font/OpenSans-Regular.ttf" 40))
+				      (font (open-font "data/font/OpenSans-Regular.ttf" 40))
 				      (track '((640 0 0 360) 
 					       (640 0 1280 360) 
 					       (1280 360 680 720)
@@ -141,8 +143,8 @@
 					       (600 620 100 360)
 					       (600 620 680 620)
 					       (600 720 680 720)))
-					  (finish-line '(600 620 16 20 5))
-					  (circles '(circle-a circle-b))
+				      (finish-line '(600 620 16 20 5))
+				      (circles '(circle-a circle-b))
 				      (circle-a (make-hash
 						  (bounce #f)
 						  (image (make-circle 30 sdl #f #f 
@@ -167,16 +169,19 @@
 	  (on-draw (lambda (world sdl)
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (set-color sdl (invert c))
-			   (draw-finish-line world sdl)
+		       (draw-finish-line world sdl)
 		       (render-track world sdl)
-			   (render-texture sdl (make-text (hash-ref world 'font) "Hallo" sdl) 400 400)
+		       (define text-texture (make-text (hash-ref world 'font) "Hallo" sdl))
+		       (set! (sdl2:texture-blend-mode text-texture) 'blend)
+		       (texture-alpha-mod-set2! text-texture 100)
+		       (render-texture sdl text-texture  200 400)
 		       (let ([return
-					 (check-finish-line 
-					  (bounce 
-					   (render-circles 
-						(hash-update world 'color (lambda (x) (+ 0.1 x)))
-						sdl
-						(invert c) '(circle-a circle-b)) sdl (hash-ref world 'circles)) 'circle-a)])
+			       (check-finish-line 
+				 (bounce 
+				   (render-circles 
+				     (hash-update world 'color (lambda (x) (+ 0.1 x)))
+				     sdl
+				     (invert c) '(circle-a circle-b)) sdl (hash-ref world 'circles)) 'circle-a)])
 			 (set-color sdl c) return))))
 	  (on-key (lambda (a-world event) 
 		    (define check-direction (lambda (keys circle world)
@@ -193,5 +198,5 @@
 										 (+ a (/ b 15))) vel m)))))))
 		    (check-direction '(up down left right) 'circle-a 
 				     (check-direction '(w s a d) 'circle-b a-world))))
-	(stop-when (lambda (world)
-				(> (hash-ref world 'circle-a 'lap) 3))))
+	  (stop-when (lambda (world)
+		       (> (hash-ref world 'circle-a 'lap) 3))))
