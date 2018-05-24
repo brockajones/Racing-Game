@@ -124,8 +124,8 @@
 							 (third (car leftover-result)))))]
 			     ;Check if you hit a corner
 			     [(and (not (hash-ref world circle 'bounce))
-				   (check-corner 15 circle-pos)
-				   (check-corner 15 (tup-merge + circle-pos (hash-ref world circle 'vel))))
+				   (check-corner 14 circle-pos))
+				   ;(check-corner 15 (tup-merge + circle-pos (hash-ref world circle 'vel))))
 			      (hash-update (hash-update world circle 'bounce (lambda (x) #t))
 					   circle 'vel (lambda (x) (tup-map 
 								     (lambda (y) (* -1 bounce-decay y)) x)))]
