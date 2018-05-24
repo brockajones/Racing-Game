@@ -106,6 +106,13 @@
 				[bounce-decay 0.8])
 			   (cond 
 			     ;Checks for hitting corner
+			     [(not (null? leftover-result))
+			      (hash-update (hash-update world circle 'bounce 
+							(lambda (x) (second (car leftover-result)))) circle 'vel 
+					   (lambda (x) 
+					     (reflection x 
+							 (second (car leftover-result)) 
+							 (third (car leftover-result)))))]
 			     [(and (not (hash-ref world circle 'bounce))
 				   (not (null? (filter 
 						 (lambda (x) (< (distance2 (first x) (second x) (car pos) (cdr pos)) 
@@ -115,13 +122,6 @@
 			      (hash-update (hash-update world circle 'bounce (lambda (x) #t))
 					   circle 'vel (lambda (x) (tup-map 
 								     (lambda (y) (* -1 bounce-decay y)) x)))]
-			     [(not (null? leftover-result))
-			      (hash-update (hash-update world circle 'bounce 
-							(lambda (x) (second (car leftover-result)))) circle 'vel 
-					   (lambda (x) 
-					     (reflection x 
-							 (second (car leftover-result)) 
-							 (third (car leftover-result)))))]
 			     [(null? leftover-result) 
 			      (hash-update (cond [(and (hash-ref world circle 'bounce)
 						       (> (vec-distance2 (hash-ref world circle 'vel)) 1.0))
