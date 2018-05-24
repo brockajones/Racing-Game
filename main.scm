@@ -1,7 +1,7 @@
+(use invert)
 (include "universe.scm")
 (include "color.scm")
 (include "math.scm")
-(include "invert.scm")
 (use (prefix sdl2 sdl2:)
      (prefix sdl2-ttf ttf:))
 
