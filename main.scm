@@ -105,8 +105,8 @@
 				[pos (hash-ref world circle 'pos)]
 				[bounce-decay 0.8])
 			   (cond 
+			     ;Checks for hitting corner
 			     [(and (not (hash-ref world circle 'bounce))
-				   ;Checks for hitting corner
 				   (not (null? (filter 
 						 (lambda (x) (< (distance2 (first x) (second x) (car pos) (cdr pos)) 
 								(expt 15 2)))
@@ -120,7 +120,8 @@
 							(lambda (x) (second (car leftover-result)))) circle 'vel 
 					   (lambda (x) 
 					     (reflection x 
-							 (second (car leftover-result)) (third (car leftover-result)))))]
+							 (second (car leftover-result)) 
+							 (third (car leftover-result)))))]
 			     [(null? leftover-result) 
 			      (hash-update (cond [(and (hash-ref world circle 'bounce)
 						       (> (vec-distance2 (hash-ref world circle 'vel)) 1.0))
@@ -148,10 +149,10 @@
 				      (circle-a (make-hash
 						  (bounce #f)
 						  (image (invert-texture (make-circle 30 sdl #f #f 
-								      (lambda (a b)
-									(or 
-									  (and (> a b) (< (/ a 2) b) ) 
-									  (> (/ a 10) b) )))))
+										      (lambda (a b)
+											(or 
+											  (and (> a b) (< (/ a 2) b) ) 
+											  (> (/ a 10) b) )))))
 						  (pos (cons 35 360))
 						  (vel (cons 0.0 0.0))
 						  (lap 0)
@@ -159,8 +160,8 @@
 				      (circle-b (make-hash
 						  (bounce #f)
 						  (image (invert-texture (make-circle 30 sdl #f #f 
-								      (lambda (a b)
-									(and (> a b) (< (/ a 2) b) )))))
+										      (lambda (a b)
+											(and (> a b) (< (/ a 2) b))))))
 						  (pos (cons 75 360))
 						  (vel (cons 0.0 0.0))
 						  (lap 0)
@@ -168,7 +169,7 @@
 				      (color 0))) 1280 720)
 	  (on-draw (lambda (world sdl)
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
-			  (invert-renderer (cdr sdl))
+		       (invert-renderer (cdr sdl))
 		       (let ([return
 			       (check-finish-line 
 				 (bounce 
@@ -177,9 +178,9 @@
 				     sdl
 				     '(255 255 255) '(circle-a circle-b)) sdl (hash-ref world 'circles)) 'circle-a)])
 			 (set-color sdl '(255 255 255))
-		       (draw-finish-line world sdl)
-		       (render-track world sdl)
-			 
+			 (draw-finish-line world sdl)
+			 (render-track world sdl)
+
 			 (render-texture sdl (invert-texture (make-text (hash-ref world 'font) "Lap 1" sdl)) 500 400)
 			 (set-color sdl c)
 			 return))))
