@@ -102,8 +102,17 @@
 							      [else #f])))
 				       (hash-ref world 'track))]
 				[leftover-result (filter (lambda (x) (and x (car x))) res)]
-				[pos (hash-ref world circle 'pos)]
+				[circle-pos (hash-ref world circle 'pos)]
 				[bounce-decay 0.8])
+			   (define check-corner (lambda (dist pos)
+						  (not (null? (filter 
+								(lambda (x) 
+								  (< (distance2 (first x) (second x) 
+										(car pos) (cdr pos)) 
+									       (expt dist 2)))
+								(apply append (map 
+										(lambda (x) (list (take x 2) (cddr x)))
+										   (hash-ref world 'track))))))))
 			   (cond 
 			     ;Checks for hitting corner
 			     [(not (null? leftover-result))
@@ -113,12 +122,10 @@
 					     (reflection x 
 							 (second (car leftover-result)) 
 							 (third (car leftover-result)))))]
+			     ;Check if you hit a corner
 			     [(and (not (hash-ref world circle 'bounce))
-				   (not (null? (filter 
-						 (lambda (x) (< (distance2 (first x) (second x) (car pos) (cdr pos)) 
-								(expt 15 2)))
-						 (apply append (map (lambda (x) (list (take x 2) (cddr x))) 
-								    (hash-ref world 'track)))))))
+				   (check-corner 15 circle-pos)
+				   (check-corner 15 (tup-merge + circle-pos (hash-ref world circle 'vel))))
 			      (hash-update (hash-update world circle 'bounce (lambda (x) #t))
 					   circle 'vel (lambda (x) (tup-map 
 								     (lambda (y) (* -1 bounce-decay y)) x)))]
@@ -151,7 +158,7 @@
 						  (image (invert-texture (make-circle 30 sdl #f #f 
 										      (lambda (a b)
 											(or 
-											  (and (> a b) (< (/ a 2) b) ) 
+											  (and (> a b) (< (/ a 2) b))
 											  (> (/ a 10) b) )))))
 						  (pos (cons 35 360))
 						  (vel (cons 0.0 0.0))
@@ -161,7 +168,8 @@
 						  (bounce #f)
 						  (image (invert-texture (make-circle 30 sdl #f #f 
 										      (lambda (a b)
-											(and (> a b) (< (/ a 2) b))))))
+											(and (> a b) 
+											     (< (/ a 2) b))))))
 						  (pos (cons 75 360))
 						  (vel (cons 0.0 0.0))
 						  (lap 0)

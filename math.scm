@@ -42,4 +42,3 @@
   (lambda (exp rename compare)
    `(letrec ([recur ,(cadr exp)])
 	   (apply recur  (quote ,(cddr exp)))))))
-
