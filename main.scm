@@ -66,8 +66,6 @@
 			    [vec-angle (atan (cdr vec) (car vec))]
 			    [vec-length (distance 0 0 (car vec) (cdr vec))]
 			    [final-angle (+ d-angle (- d-angle (fix-angle (+ pi vec-angle))))])
-		       (set! angle-a vec-angle)
-		       (set! angle-b d-angle)
 		       (cond 
 			 [(>= (/ pi 2) (abs (- vec-angle d-angle))) vec]
 			 [else (angle->vec final-angle vec-length)]))))
@@ -109,10 +107,10 @@
 								(lambda (x) 
 								  (< (distance2 (first x) (second x) 
 										(car pos) (cdr pos)) 
-									       (expt dist 2)))
+								     (expt dist 2)))
 								(apply append (map 
 										(lambda (x) (list (take x 2) (cddr x)))
-										   (hash-ref world 'track))))))))
+										(hash-ref world 'track))))))))
 			   (cond 
 			     ;Checks for hitting corner
 			     [(not (null? leftover-result))
@@ -124,8 +122,8 @@
 							 (third (car leftover-result)))))]
 			     ;Check if you hit a corner
 			     [(and (not (hash-ref world circle 'bounce))
-				   (check-corner 14 circle-pos))
-				   ;(check-corner 15 (tup-merge + circle-pos (hash-ref world circle 'vel))))
+				   (check-corner 10 circle-pos))
+			      ;(check-corner 15 (tup-merge + circle-pos (hash-ref world circle 'vel))))
 			      (hash-update (hash-update world circle 'bounce (lambda (x) #t))
 					   circle 'vel (lambda (x) (tup-map 
 								     (lambda (y) (* -1 bounce-decay y)) x)))]
@@ -140,7 +138,8 @@
 			     [else world]))])))
 
 (big-bang (init-world (lambda (sdl) (make-hash 
-				      (font (open-font "data/font/OpenSans-Regular.ttf" 300))
+				      (stage 'count-down)
+				      (font (open-font "data/font/carbon bl.ttf" 300))
 				      (track '((640 0 0 360) 
 					       (640 0 1280 360) 
 					       (1280 360 680 720)
@@ -188,8 +187,7 @@
 			 (set-color sdl '(255 255 255))
 			 (draw-finish-line world sdl)
 			 (render-track world sdl)
-
-			 (render-texture sdl (invert-texture (make-text (hash-ref world 'font) "Lap 1" sdl)) 500 400)
+			 (render-texture sdl (invert-texture (make-text (hash-ref world 'font) "Lap 1" sdl)) 640 360)
 			 (set-color sdl c)
 			 return))))
 	  (on-key (lambda (a-world event) 
