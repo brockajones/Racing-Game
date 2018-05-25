@@ -6,18 +6,23 @@
      (prefix sdl2-ttf ttf:))
 
 (define render-circles (lambda (a-world sdl col circles)
-			 (cond [(null? circles) a-world]
-			       [else
-				 (let* ([world (render-circles a-world sdl col (cdr circles))]
+			 (cond [(not (null? circles)) 
+				(let* ([circle (car circles)]
+				       [pos (hash-ref a-world circle 'pos)]
+				       [texture (hash-ref a-world circle 'image)]
+				       [vel (hash-ref a-world circle 'vel)])
+				  (render-texture sdl texture (round (car pos)) 
+						  (round (cdr pos)) col 30 30)
+				  (render-circles a-world sdl col (cdr circles)))])))
+
+(define update-pos (lambda (a-world circles)
+		     (cond [(null? circles) a-world]
+			   [else (let* ([world (update-pos a-world (cdr circles))]
 					[circle (car circles)]
-					[pos (hash-ref world circle 'pos)]
-					[texture (hash-ref world circle 'image)]
 					[vel (hash-ref world circle 'vel)])
-				   (render-texture sdl texture (round (car pos)) 
-						   (round (cdr pos)) col 30 30)
 				   (hash-update world circle 'pos (lambda (x) 
-								    (cons (+ (car x) (car vel))
-									  (+ (cdr x) (cdr vel))))))])))
+								    (tup-merge + x vel))))])))
+
 
 (define render-track (lambda (world sdl)
 		       (map (lambda (point)
@@ -39,8 +44,12 @@
 			   (let ([args (hash-ref world 'finish-line)])
 			     (apply render-checker (cons sdl args)))))
 
-(define check-finish-line (lambda (world circle)
-			    (let* ([circle-pos (hash-ref world circle 'pos)]
+(define check-finish-line (lambda (a-world circles)
+			    (cond [(null? circles) a-world]
+				  [else 
+			    (let* ([world (check-finish-line a-world (cdr circles))]
+				   [circle (car circles)]
+				   [circle-pos (hash-ref world circle 'pos)]
 				   [circle-vel (hash-ref world circle 'vel)]
 				   [finish-line (hash-ref world 'finish-line)]
 				   [hit (and (> 15 (abs (- (car circle-pos) (first finish-line))))
@@ -56,7 +65,16 @@
 									    (/ (car circle-vel) 
 									       (abs (car circle-vel)))
 									    x)))]
-				    [else world]))))
+				    [else
+				      (if (< (- (current-seconds) (hash-ref world 'start-time)) 10)
+				      world
+				      (hash-set world
+						(string-append "Lap " (number->string (inexact->exact (apply max 
+						       (map 
+							 (lambda (c) (hash-ref world c 'lap)) 
+							 (hash-ref world 'circles))))))
+						'text))]))])))
+				      
 
 (define reflection (lambda (vec line d-line)
 		     (let* ([line-angle (atan (- (second line) (fourth line))
@@ -85,17 +103,16 @@
 		    (if (or (> a1-length b-distance) #f) #f
 		      (map round (list (car a2-start) (cdr a2-start) (car point) (cdr point)))))))
 
-(define bounce (lambda (a-world sdl circles)
+(define bounce (lambda (a-world circles)
 		 (cond [(null? circles) a-world]
 		       [else
-			 (let* ([world (bounce a-world sdl (cdr circles))]
+			 (let* ([world (bounce a-world (cdr circles))]
 				[circle (car circles)]
 				[res (map 
 				       (lambda (line) (let ([proj 
 							      (project line 
 								       (hash-ref world circle 'pos))])
 							(cond [proj
-								;(apply draw-line (cons sdl proj))
 								(list (>= 15 (apply distance proj)) line proj)]
 							      [else #f])))
 				       (hash-ref world 'track))]
@@ -139,7 +156,9 @@
 
 (big-bang (init-world (lambda (sdl) (make-hash 
 				      (stage 'count-down)
+				      (start-time (current-seconds))
 				      (font (open-font "data/font/carbon bl.ttf" 300))
+				      (text " ")
 				      (track '((640 0 0 360) 
 					       (640 0 1280 360) 
 					       (1280 360 680 720)
@@ -159,7 +178,7 @@
 											(or 
 											  (and (> a b) (< (/ a 2) b))
 											  (> (/ a 10) b) )))))
-						  (pos (cons 35 360))
+						  (pos (cons 620 660))
 						  (vel (cons 0.0 0.0))
 						  (lap 0)
 						  (finish-touch #f)))
@@ -169,7 +188,7 @@
 										      (lambda (a b)
 											(and (> a b) 
 											     (< (/ a 2) b))))))
-						  (pos (cons 75 360))
+						  (pos (cons 620 700))
 						  (vel (cons 0.0 0.0))
 						  (lap 0)
 						  (finish-touch #f)))
@@ -177,33 +196,40 @@
 	  (on-draw (lambda (world sdl)
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (invert-renderer (cdr sdl))
-		       (let ([return
-			       (check-finish-line 
-				 (bounce 
-				   (render-circles 
-				     (hash-update world 'color (lambda (x) (+ 0.1 x)))
-				     sdl
-				     '(255 255 255) '(circle-a circle-b)) sdl (hash-ref world 'circles)) 'circle-a)])
-			 (set-color sdl '(255 255 255))
-			 (draw-finish-line world sdl)
-			 (render-track world sdl)
-			 (render-texture sdl (invert-texture (make-text (hash-ref world 'font) "Lap 1" sdl)) 640 360)
-			 (set-color sdl c)
-			 return))))
+		       (render-circles world sdl '(255 255 255) '(circle-a circle-b))
+		       (set-color sdl '(255 255 255))
+		       (draw-finish-line world sdl)
+		       (render-track world sdl)
+		       (render-texture sdl (invert-texture 
+					     (make-text (hash-ref world 'font) (hash-ref world 'text) sdl)) 640 360)
+		       (set-color sdl c)
+		       (case (hash-ref world 'stage)
+			 ['count-down 
+			  (let ([num (inexact->exact (- 3 (quotient 
+					    (- (current-seconds) (hash-ref world 'start-time)) 2)))])
+			    (cond [(> num 0) (hash-set world (number->string num) 'text)]
+				  [(= num 0) (hash-set (hash-set world 'run 'stage) "GO" 'text)]))]
+			 ['run (update-pos 
+				 (check-finish-line 
+				   (bounce 
+				     (hash-update world 'color (lambda (x) (+ 0.1 x))) 
+				     (hash-ref world 'circles)) (hash-ref world 'circles)) (hash-ref world 'circles))]
+			 [else world]))))
 	  (on-key (lambda (a-world event) 
-		    (define check-direction (lambda (keys circle world)
-					      (let ([m (cond [(equal? event (first keys)) '(0 . -1)]
-							     [(equal? event (second keys)) '(0 . 1)]
-							     [(equal? event (third keys)) '(-1 . 0)]
-							     [(equal? event (fourth keys)) '(1 . 0)]
-							     [else '(0 . 0)])])
-						(if (hash-ref world circle 'bounce)
-						  world
-						  (hash-update world circle 'vel
-							       (lambda (vel) (tup-merge
-									       (lambda (a b) 
-										 (+ a (/ b 15))) vel m)))))))
-		    (check-direction '(up down left right) 'circle-a 
-				     (check-direction '(w s a d) 'circle-b a-world))))
-	  (stop-when (lambda (world)
-		       (> (hash-ref world 'circle-a 'lap) 3))))
+		    (case (hash-ref a-world 'stage)
+		      ['run 
+		       (define check-direction (lambda (keys circle world)
+						 (let ([m (cond [(equal? event (first keys)) '(0 . -1)]
+								[(equal? event (second keys)) '(0 . 1)]
+								[(equal? event (third keys)) '(-1 . 0)]
+								[(equal? event (fourth keys)) '(1 . 0)]
+								[else '(0 . 0)])])
+						   (if (hash-ref world circle 'bounce)
+						     world
+						     (hash-update world circle 'vel
+								  (lambda (vel) (tup-merge
+										  (lambda (a b) 
+										    (+ a (/ b 15))) vel m)))))))
+		       (check-direction '(up down left right) 'circle-a 
+					(check-direction '(w s a d) 'circle-b a-world))]
+		      [else a-world]))))
