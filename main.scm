@@ -192,7 +192,7 @@
 							(600 620 680 620)
 							(600 720 680 720)))
 					       (finish-line '(600 620 16 20 5))))
-				      (circles '(circle-a circle-b))
+				      (circles '(circle-a ))
 				      (circle-a (make-hash
 						  (bounce #f)
 						  (image (invert-texture (make-circle 60 sdl #f #f 
@@ -218,7 +218,7 @@
 	  (on-draw (lambda (world sdl)
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
 		       (invert-renderer (cdr sdl))
-		       (render-circles world sdl '(255 255 255) '(circle-a circle-b))
+		       (render-circles world sdl '(255 255 255) (hash-ref world 'circles))
 		       (set-color sdl '(255 255 255))
 		       (render-finish-line world sdl)
 		       (render-track world sdl)
@@ -240,7 +240,7 @@
 				 (hash-ref world 'circles))]
 			 ['win (hash-set world "Winner:   " 'text)]
 			 [else world]))))
-	  (on-key (lambda (a-world event) 
+	  (on-key (lambda (a-world event)
 		    (case (hash-ref a-world 'stage)
 		      ['run 
 		       (define check-direction (lambda (keys circle world)
