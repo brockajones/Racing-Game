@@ -29,58 +29,71 @@
 			      (apply draw-line (cons sdl point)))
 			    (hash-ref world 'track 'lines))))
 
+
+(define render-winner (lambda (world sdl)
+			(cond [(eq? (hash-ref world 'stage) 'win)
+			       (let ([circle 
+				       (car (sort (hash-ref world 'circles) (lambda (x y) (> (hash-ref world x 'lap) 
+											(hash-ref world y 'lap)))))])
+				 (render-texture sdl (hash-ref world circle 'image) 1100 380))])))
+
+
+
 (define render-checker (lambda (sdl x y wc hc s) ;wc/hc is the number of squares
 			 (define render-hor (lambda (x2 wc2)
 					      (cond [(> wc2 0) 
 						     (draw-fill-rect sdl x2 y s s)
-						     (render-hor (+ x2 s s) (- wc2 2))])))
+						     (render-hor (+ x2 s s) 
+								 (- wc2 2))])))
 			 (cond [(> hc 0)
 				(if  (= 0 (modulo hc 2))
 				  (render-hor x wc)
 				  (render-hor (+ s x) (- wc 1)))
 				(render-checker sdl x (+ y s) wc (- hc 1) s)])))
 
-(define draw-finish-line (lambda (world sdl)
-			   (let ([args (hash-ref world 'track 'finish-line)])
-			     (apply render-checker (cons sdl args)))))
+
+(define render-finish-line (lambda (world sdl)
+
+			     (let ([args (hash-ref world 'track 'finish-line)])
+			       (apply render-checker (cons sdl args)))))
 
 (define check-finish-line (lambda (a-world circles)
 			    (cond [(null? circles) a-world]
 				  [else 
-			    (let* ([world (check-finish-line a-world (cdr circles))]
-				   [circle (car circles)]
-				   [circle-pos (hash-ref world circle 'pos)]
-				   [circle-vel (hash-ref world circle 'vel)]
-				   [finish-line (hash-ref world 'track 'finish-line)]
-				   [hit (and (> 15 (abs (- (car circle-pos) (first finish-line))))
-					     (> (cdr circle-pos) (second finish-line))
-					     (< (cdr circle-pos) (+ (second finish-line) 
-								    (* (fourth finish-line) 
-								       (fifth finish-line)))))]
-				   [max-lap (apply max 
-						   (map 
-						     (lambda (c) (hash-ref world c 'lap)) 
-						     (hash-ref world 'circles)))])
-			      (cond [hit 
-				      (hash-set world #t circle 'finish-touch)]
-				    [(and (not hit) (hash-ref world circle 'finish-touch))
-				     (hash-update (hash-set world #f circle 'finish-touch)
-						  circle 'lap (lambda (x) (+
-									    (/ (car circle-vel) 
-									       (abs (car circle-vel)))
-									    x)))]
-				    [(= (hash-ref world 'track 'laps) (add1 max-lap)) 
-				     (hash-set world "Final Lap" 'text)]
-				    [(= (hash-ref world 'track 'laps) max-lap)
-				     (hash-set world 'win 'stage)]
-				    [else
-				      (if (< (- (current-seconds) (hash-ref world 'start-time)) 10)
-					world
-					  (hash-set world
-						    (string-append "Lap " 
-								   (number->string 
-								     (inexact->exact max-lap)))
-						    'text))]))])))
+				    (let* ([world (check-finish-line a-world (cdr circles))]
+					   [circle (car circles)]
+					   [circle-pos (hash-ref world circle 'pos)]
+					   [circle-vel (hash-ref world circle 'vel)]
+					   [finish-line (hash-ref world 'track 'finish-line)]
+					   [hit (and (> 15 (abs (- (car circle-pos) (first finish-line))))
+						     (> (cdr circle-pos) (second finish-line))
+						     (< (cdr circle-pos) (+ (second finish-line) 
+									    (* (fourth finish-line) 
+									       (fifth finish-line)))))]
+					   [max-lap (apply max 
+							   (map 
+							     (lambda (c) (hash-ref world c 'lap)) 
+							     (hash-ref world 'circles)))])
+				      (cond [hit 
+					      (hash-set world #t circle 'finish-touch)]
+					    [(and (not hit) (hash-ref world circle 'finish-touch))
+					     (hash-update (hash-set world #f circle 'finish-touch)
+							  circle 'lap (lambda (x) (+
+										    (/ (car circle-vel) 
+										       (abs (car circle-vel)))
+										    x)))]
+					    [(= (hash-ref world 'track 'laps) (add1 max-lap)) 
+					     (hash-set world "Final Lap" 'text)]
+					    [(= (hash-ref world 'track 'laps) max-lap)
+					     (hash-set world 'win 'stage)]
+					    [else
+					      (if (< (- (current-seconds) (hash-ref world 'start-time)) 10)
+						world
+						(hash-set world
+							  (string-append "Lap " 
+									 (number->string 
+									   (inexact->exact max-lap)))
+							  'text))]))])))
 
 (define reflection (lambda (vec line d-line)
 		     (let* ([line-angle (atan (- (second line) (fourth line))
@@ -132,7 +145,8 @@
 										(car pos) (cdr pos)) 
 								     (expt dist 2)))
 								(apply append (map 
-										(lambda (x) (list (take x 2) (cddr x)))
+										(lambda (x) (list (take x 2) 
+												  (cddr x)))
 										(hash-ref world 'track 'lines))))))))
 			   (cond 
 			     ;Checks for hitting corner
@@ -181,7 +195,7 @@
 				      (circles '(circle-a circle-b))
 				      (circle-a (make-hash
 						  (bounce #f)
-						  (image (invert-texture (make-circle 30 sdl #f #f 
+						  (image (invert-texture (make-circle 60 sdl #f #f 
 										      (lambda (a b)
 											(or 
 											  (and (> a b) (< (/ a 2) b))
@@ -192,7 +206,7 @@
 						  (finish-touch #f)))
 				      (circle-b (make-hash
 						  (bounce #f)
-						  (image (invert-texture (make-circle 30 sdl #f #f 
+						  (image (invert-texture (make-circle 60 sdl #f #f 
 										      (lambda (a b)
 											(and (> a b) 
 											     (< (/ a 2) b))))))
@@ -206,23 +220,25 @@
 		       (invert-renderer (cdr sdl))
 		       (render-circles world sdl '(255 255 255) '(circle-a circle-b))
 		       (set-color sdl '(255 255 255))
-		       (draw-finish-line world sdl)
+		       (render-finish-line world sdl)
 		       (render-track world sdl)
+		       (render-winner world sdl)
 		       (render-texture sdl (invert-texture 
 					     (make-text (hash-ref world 'font) (hash-ref world 'text) sdl)) 640 360)
 		       (set-color sdl c)
 		       (case (hash-ref world 'stage)
 			 ['count-down 
 			  (let ([num (inexact->exact (- 3 (quotient 
-					    (- (current-seconds) (hash-ref world 'start-time)) 2)))])
+							    (- (current-seconds) (hash-ref world 'start-time)) 2)))])
 			    (cond [(> num 0) (hash-set world (number->string num) 'text)]
 				  [(= num 0) (hash-set (hash-set world 'run 'stage) "GO" 'text)]))]
 			 ['run (update-pos 
 				 (check-finish-line 
 				   (bounce 
 				     (hash-update world 'color (lambda (x) (+ 0.1 x))) 
-				     (hash-ref world 'circles)) (hash-ref world 'circles)) (hash-ref world 'circles))]
-			 ['win (hash-set world "Winner" 'text)]
+				     (hash-ref world 'circles)) (hash-ref world 'circles)) 
+				 (hash-ref world 'circles))]
+			 ['win (hash-set world "Winner:   " 'text)]
 			 [else world]))))
 	  (on-key (lambda (a-world event) 
 		    (case (hash-ref a-world 'stage)
