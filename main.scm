@@ -63,10 +63,9 @@
 				    (let* ([world (check-finish-line a-world (cdr circles))]
 					   [circle (car circles)]
 					   [circle-pos (hash-ref world circle 'pos)]
-					   [circle-vel (hash-ref world circle 'vel)]
+					   [circle-next-pos (tup-merge + circle-pos (hash-ref world circle 'vel))]
 					   [finish-line (hash-ref world 'track 'finish-line)]
-					   [hit (and (> 15 (abs (- (car circle-pos) (first finish-line))))
-						     (> (cdr circle-pos) (second finish-line))
+					   [hit-y (and (> (cdr circle-pos) (second finish-line))
 						     (< (cdr circle-pos) (+ (second finish-line) 
 									    (* (fourth finish-line) 
 									       (fifth finish-line)))))]
@@ -74,26 +73,29 @@
 							   (map 
 							     (lambda (c) (hash-ref world c 'lap)) 
 							     (hash-ref world 'circles)))])
-				      (cond [hit 
-					      (hash-set world #t circle 'finish-touch)]
-					    [(and (not hit) (hash-ref world circle 'finish-touch))
-					     (hash-update (hash-set world #f circle 'finish-touch)
-							  circle 'lap (lambda (x) (+
-										    (/ (car circle-vel) 
-										       (abs (car circle-vel)))
-										    x)))]
-					    [(= (hash-ref world 'track 'laps) (add1 max-lap)) 
-					     (hash-set world "Final Lap" 'text)]
-					    [(= (hash-ref world 'track 'laps) max-lap)
-					     (hash-set world 'win 'stage)]
-					    [else
-					      (if (< (- (current-seconds) (hash-ref world 'start-time)) 10)
-						world
-						(hash-set world
-							  (string-append "Lap " 
-									 (number->string 
-									   (inexact->exact max-lap)))
-							  'text))]))])))
+				      (cond 
+					[(and hit-y 
+					      (< (car circle-pos) (first finish-line))
+					      (>= (car circle-next-pos) (first finish-line)))
+					 (print "ahead")
+					 (hash-update world circle 'lap (lambda (x) (+ 1 x)))]
+					[(and hit-y 
+					      (>= (car circle-pos) (first finish-line))
+					      (< (car circle-next-pos) (first finish-line)))
+					 (print "behind")
+					 (hash-update world circle 'lap (lambda (x) (- x 1)))]
+					[(= (hash-ref world 'track 'laps) (add1 max-lap)) 
+					 (hash-set world "Final Lap" 'text)]
+					[(= (hash-ref world 'track 'laps) max-lap)
+					 (hash-set world 'win 'stage)]
+					[else
+					  (if (< (- (current-seconds) (hash-ref world 'start-time)) 10)
+					    world
+					    (hash-set world
+						      (string-append "Lap " 
+								     (number->string 
+								       (inexact->exact max-lap)))
+						      'text))]))])))
 
 (define reflection (lambda (vec line d-line)
 		     (let* ([line-angle (atan (- (second line) (fourth line))
@@ -192,7 +194,7 @@
 							(600 620 680 620)
 							(600 720 680 720)))
 					       (finish-line '(600 620 16 20 5))))
-				      (circles '(circle-a ))
+				      (circles '(circle-a circle-b))
 				      (circle-a (make-hash
 						  (bounce #f)
 						  (image (invert-texture (make-circle 60 sdl #f #f 
@@ -202,8 +204,7 @@
 											  (> (/ a 10) b) )))))
 						  (pos (cons 620 660))
 						  (vel (cons 0.0 0.0))
-						  (lap 0)
-						  (finish-touch #f)))
+						  (lap 0)))
 				      (circle-b (make-hash
 						  (bounce #f)
 						  (image (invert-texture (make-circle 60 sdl #f #f 
@@ -212,8 +213,7 @@
 											     (< (/ a 2) b))))))
 						  (pos (cons 620 700))
 						  (vel (cons 0.0 0.0))
-						  (lap 0)
-						  (finish-touch #f)))
+						  (lap 0)))
 				      (color 0))) 1280 720)
 	  (on-draw (lambda (world sdl)
 		     (let* ( [c (hue->rgb (floor (hash-ref world 'color)))])
