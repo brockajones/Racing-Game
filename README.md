@@ -1,13 +1,13 @@
-#Racing Game
+# Racing Game
 
 Racing Game is a multiplayer game written in Chicken Scheme where two players race around a diamond track. The racing balls bounce off the edges of the track
 
 ![Screenshot of game](screenshot.png)
 
-##Building
+## Building
 To build you must use Chicken Scheme 4.13.x. Chicken Scheme 5 is currently not supported.
 
-##Installation
+## Installation
 
 First install these eggs
 SDL2
