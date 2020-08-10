@@ -16,8 +16,13 @@ srfi-113
 
 by running:
 
-```sudo chicken install SDL2
+```
+sudo chicken install SDL2
 sudo chicken install SDL2-TTF
-sudo chicken install srfi-113```
+sudo chicken install srfi-113
+```
 
-Then run ```make```
+Then run: 
+```
+make
+```
